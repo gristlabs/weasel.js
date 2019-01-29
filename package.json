@@ -1,5 +1,5 @@
 {
-  "name": "weasel.js",
+  "name": "weaseljs",
   "version": "0.0.1",
   "description": "Collection of UI elements that behave as popovers",
   "main": "dist/index",
@@ -9,11 +9,13 @@
     "test": "mocha 'test/browser/**/*.{js,ts}'",
     "test-debug": "mocha --bail test/browser/**/*.{js,ts} --no-exit",
     "test-manual": "webpack-dev-server --config test/fixtures/webpack.config.js",
-    "prepublish": "npm run build"
+    "prepack": "[ ! -f .buildme ] || npm run build",
+    "preinstall": "[ ! -f .buildme ] || npm run build"
   },
   "files": [
     "dist",
-    "lib"
+    "lib",
+    "index.ts"
   ],
   "repository": {
     "type": "git",
