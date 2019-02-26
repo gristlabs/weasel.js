@@ -73,14 +73,14 @@ export function menuElem(triggerElem: Element, createFunc: MenuCreateFunc, optio
 export function menuItem(action: () => void, ...args: DomElementArg[]): Element {
   return cssMenuItem(
     ...args,
-    dom.on('click', action),
+    dom.on('click', (ev, elem) => elem.classList.contains('disabled') || action()),
     onKeyDown({Enter$: action})
   );
 }
 
 export function onMenuItemSelected(yesNo: boolean, elem: Element) {
   if (yesNo) { (elem as HTMLElement).focus(); }
-  elem.classList.toggle(menuItemSelectedClass);
+  elem.classList.toggle(cssMenuItem.className + '-sel', yesNo);
 }
 
 const defaultMenuOptions: IMenuOptions = {
@@ -107,11 +107,11 @@ export class Menu extends Disposable implements IPopupContent {
     // Also focus the newly-selected element for keyboard events.
     this.autoDispose(this._selected.addListener((val: Element|null, prev: Element|null) => {
       if (val) {
-        const callback = dom.getData(val, menuItemSelectedClass) || onMenuItemSelected;
+        const callback = dom.getData(val, 'menuItemSelected') || onMenuItemSelected;
         callback(true, val);
       }
       if (prev) {
-        const callback = dom.getData(prev, menuItemSelectedClass) || onMenuItemSelected;
+        const callback = dom.getData(prev, 'menuItemSelected') || onMenuItemSelected;
         callback(false, prev);
       }
     }));
@@ -119,7 +119,7 @@ export class Menu extends Disposable implements IPopupContent {
     this.content = cssMenu({class: options.menuCssClass || ''},
       items,
       dom.on('mouseover', (ev) => this._onMouseOver(ev as MouseEvent)),
-      dom.on('click', (ev) => ctl.close(0)),
+      dom.on('click', (ev) => this._findTargetItem(ev as MouseEvent) && ctl.close(0)),
       onKeyDown({
         ArrowDown: () => this._nextIndex(),
         ArrowUp: () => this._prevIndex(),
@@ -137,7 +137,7 @@ export class Menu extends Disposable implements IPopupContent {
       // Not using isSelectable because it checks the offset height of the elements to determine
       // visibility. None of the elements have an offset height on creation since they are not yet
       // attached to the dom.
-      const elems = Array.from(this.content.children).filter(elem =>
+      const elems = Array.from(this.content.children).filter((elem) =>
         elem.hasAttribute('tabIndex') && !elem.classList.contains('disabled'));
       if (elems.length > options.startIndex) {
         this._selected.set(elems[options.startIndex]);
@@ -167,8 +167,13 @@ export class Menu extends Disposable implements IPopupContent {
 
   private _onMouseOver(ev: MouseEvent) {
     // Find immediate child of this.content which is an ancestor of ev.target.
+    const elem = this._findTargetItem(ev);
+    if (elem) { this._selected.set(elem); }
+  }
+
+  private _findTargetItem(ev: MouseEvent): Element|null {
     const elem = findAncestorChild(this.content, ev.target as Element);
-    if (elem && isSelectable(elem)) { this._selected.set(elem); }
+    return elem && isSelectable(elem) && !elem.classList.contains(cssMenu.className) ? elem : null;
   }
 }
 
@@ -219,7 +224,7 @@ export function menuItemSubmenu(
     modifiers: {preventOverflow: {padding: 10}},
     boundaries: 'viewport',
     controller: ctl,
-    attach: 'body',
+    attach: null,
     isSubMenu: true,
     ...options
   };
@@ -242,7 +247,7 @@ export function menuItemSubmenu(
     }),
 
     // When selection changes, use default behavior and also close the popup.
-    (elem: Element) => dom.dataElem(elem, menuItemSelectedClass, (yesNo: boolean) => {
+    (elem: Element) => dom.dataElem(elem, 'menuItemSelected', (yesNo: boolean) => {
       onMenuItemSelected(yesNo, elem);
       return yesNo || ctl.close();
     }),
@@ -289,8 +294,6 @@ export const cssMenuDivider = styled('div', `
   background-color: #D9D9D9;
 `);
 
-const menuItemSelectedClass = cssMenuItem.className + '-sel';
-
 // ----------------------------------------------------------------------
 // TODO: move this to grainjs
 // Document: e.g. "Enter" handles the key and stops propagation, "Enter$" handles Enter and lets
@@ -303,6 +306,7 @@ function onKeyDownElem(elem: Element, keyHandlers: {[key: string]: (ev: Event) =
     const handler = keyHandlers[(ev as KeyboardEvent).key];
     if (handler) {
       ev.stopPropagation();
+      ev.preventDefault();
       handler(ev);
     } else {
       const bubbleHandler = keyHandlers[(ev as KeyboardEvent).key + '$'];
