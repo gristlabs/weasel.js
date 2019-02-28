@@ -15,7 +15,7 @@
  * If a click on an item should not close the menu, the item should stop the click's propagation.
  */
 import {dom, domDispose, DomElementArg, DomElementMethod, styled} from 'grainjs';
-import {Disposable, Observable, observable} from 'grainjs';
+import {Disposable, Observable, observable, onKeyDown} from 'grainjs';
 import defaultsDeep = require('lodash/defaultsDeep');
 import {IPopupContent, IPopupOptions, PopupControl, setPopupToFunc} from './popup';
 
@@ -295,31 +295,6 @@ export const cssMenuDivider = styled('div', `
 `);
 
 // ----------------------------------------------------------------------
-// TODO: move this to grainjs
-// Document: e.g. "Enter" handles the key and stops propagation, "Enter$" handles Enter and lets
-// it bubble.
-function onKeyDownElem(elem: Element, keyHandlers: {[key: string]: (ev: Event) => void}): void {
-  if (!((elem as HTMLElement).tabIndex >= 0)) {   // Check if tabIndex is undefined or -1.
-    elem.setAttribute('tabindex', '-1');          // Make the element focusable.
-  }
-  dom.onElem(elem, 'keydown', (ev: Event) => {
-    const handler = keyHandlers[(ev as KeyboardEvent).key];
-    if (handler) {
-      ev.stopPropagation();
-      ev.preventDefault();
-      handler(ev);
-    } else {
-      const bubbleHandler = keyHandlers[(ev as KeyboardEvent).key + '$'];
-      if (bubbleHandler) {
-        bubbleHandler(ev);
-      }
-    }
-  });
-}
-
-function onKeyDown(keyHandlers: {[key: string]: (ev: Event) => void}): DomElementMethod {
-  return (elem) => onKeyDownElem(elem, keyHandlers);
-}
 
 class FocusLayer extends Disposable {
   constructor(content: Element) {
