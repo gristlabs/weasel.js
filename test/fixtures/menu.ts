@@ -3,7 +3,7 @@
  */
 // tslint:disable:no-console
 import {dom, DomElementArg, makeTestId, obsArray, observable, styled, TestId} from 'grainjs';
-import {cssMenuDivider, menu, menuItem, menuItemSubmenu} from '../../index';
+import {cssMenuDivider, menu, menuItem, menuItemLink, menuItemSubmenu} from '../../index';
 
 document.addEventListener('DOMContentLoaded', () => {
   document.body.appendChild(setupTest());
@@ -54,10 +54,11 @@ function makeMenu(): DomElementArg[] {
       pasteList.push(`Paste ${++pasteCount}`);
     }, "Paste"),
     cssMenuDivider(),
-    dom.forEach(pasteList, str =>
+    dom.forEach(pasteList, (str) =>
       menuItem(() => { console.log(`Menu item: ${str}`); }, str)
     ),
     cssMenuDivider(),
+    menuItemLink({href: 'https://getgrist.com'}, 'Visit getgrist.com'),
     menuItem(() => {
       hideCut.set(!hideCut.get());
       console.log("Menu item: Show/Hide Cut");
@@ -70,7 +71,7 @@ function makeMenu(): DomElementArg[] {
 function makePasteSubmenu(): DomElementArg[] {
   console.log("makePasteSubmenu");
   return [
-    menuItem(() => {}, {class: 'disabled'}, "Disabled"),
+    menuItem(() => { alert("This shouldn't happen"); }, {class: 'disabled'}, "Disabled"),
     menuItem(() => { console.log("Menu item: Cut2"); }, "Cut2"),
     menuItem(() => { console.log("Menu item: Copy2"); }, "Copy2"),
     menuItem(() => { console.log("Menu item: Paste2"); }, "Paste2"),

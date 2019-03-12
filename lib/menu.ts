@@ -78,6 +78,16 @@ export function menuItem(action: () => void, ...args: DomElementArg[]): Element 
   );
 }
 
+/**
+ * A version of menuItem that's an <a> link element.
+ */
+export function menuItemLink(...args: DomElementArg[]): Element {
+  return cssMenuItemLink({tabindex: '-1'}, cssMenuItem.cls(''), ...args,
+    // This prevents propagation, but NOT the default action, which is to open the link.
+    onKeyDown({Enter$: (ev) => ev.stopPropagation()})
+  );
+}
+
 export function onMenuItemSelected(yesNo: boolean, elem: Element) {
   if (yesNo) { (elem as HTMLElement).focus(); }
   elem.classList.toggle(cssMenuItem.className + '-sel', yesNo);
@@ -89,6 +99,12 @@ const defaultMenuOptions: IMenuOptions = {
   placement: 'bottom-start',
   showDelay: 0,
   trigger: ['click'],
+  modifiers: {
+    // gpuAcceleration (true by default) causes a tiny UI artifact: attempting to drag a link, at
+    // least in Firefox, causes it to be dragged from a different location on the screen where it
+    // actually is, which looks strange. Disabling has no noticeable downsides.
+    computeStyle: {gpuAcceleration: false}
+  },
 };
 
 /**
@@ -284,6 +300,24 @@ export const cssMenuItem = styled('li', `
     cursor: pointer;
     background-color: var(--weaseljs-selected-background-color, #5AC09C);
     color:            var(--weaseljs-selected-color, white);
+  }
+`);
+
+export const cssMenuItemLink = styled('a', `
+  display: flex;
+  justify-content: space-between;
+  outline: none;
+  padding: var(--weaseljs-menu-item-padding, 8px 24px);
+  user-select: none;
+  -moz-user-select: none;
+
+  &, &:hover, &:focus {
+    color: inherit;
+    text-decoration: none;
+    outline: none;
+  }
+  &.${cssMenuItem.className}-sel {
+    color: var(--weaseljs-selected-color, white);
   }
 `);
 
