@@ -17,9 +17,10 @@
 import {dom, domDispose, DomElementArg, DomElementMethod, styled} from 'grainjs';
 import {Disposable, Observable, observable, onKeyDown} from 'grainjs';
 import defaultsDeep = require('lodash/defaultsDeep');
-import {IPopupContent, IPopupOptions, PopupControl, setPopupToFunc} from './popup';
+import mergeWith = require('lodash/mergeWith');
+import {IOpenController, IPopupContent, IPopupOptions, PopupControl, setPopupToFunc} from './popup';
 
-export type MenuCreateFunc = (ctl: PopupControl) => DomElementArg[];
+export type MenuCreateFunc = (ctl: IOpenController) => DomElementArg[];
 
 export interface IMenuOptions extends IPopupOptions {
   startIndex?: number;
@@ -42,7 +43,10 @@ export function menu(createFunc: MenuCreateFunc, options?: IMenuOptions): DomEle
   return (elem) => menuElem(elem, createFunc, options);
 }
 export function menuElem(triggerElem: Element, createFunc: MenuCreateFunc, options: IMenuOptions = {}) {
-  options = defaultsDeep({}, options, defaultMenuOptions);
+  // This is similar to defaultsDeep but avoids merging arrays, since options.trigger should have
+  // the exact value from options if present.
+  options = mergeWith({}, defaultMenuOptions, options,
+    (objValue: any, srcValue: any) => Array.isArray(srcValue) ? srcValue : undefined);
   setPopupToFunc(triggerElem,
     (ctl, opts) => Menu.create(null, ctl, createFunc(ctl), defaultsDeep(opts, options)),
     options);
@@ -115,7 +119,7 @@ export class Menu extends Disposable implements IPopupContent {
 
   private _selected: Observable<Element|null> = observable(null);
 
-  constructor(ctl: PopupControl, items: DomElementArg[], options: IMenuOptions = {}) {
+  constructor(ctl: IOpenController, items: DomElementArg[], options: IMenuOptions = {}) {
     super();
 
     // When the selected element changes, update the classes of the formerly and newly-selected
@@ -135,7 +139,8 @@ export class Menu extends Disposable implements IPopupContent {
     this.content = cssMenu({class: options.menuCssClass || ''},
       items,
       dom.on('mouseover', (ev) => this._onMouseOver(ev as MouseEvent)),
-      dom.on('click', (ev) => this._findTargetItem(ev as MouseEvent) && ctl.close(0)),
+      dom.on('mouseleave', (ev) => this._onMouseLeave(ev as MouseEvent)),
+      dom.on('click', (ev) => this._findTargetItem(ev as MouseEvent) ? ctl.close(0) : ev.stopPropagation()),
       onKeyDown({
         ArrowDown: () => this._nextIndex(),
         ArrowUp: () => this._prevIndex(),
@@ -182,15 +187,32 @@ export class Menu extends Disposable implements IPopupContent {
   }
 
   private _onMouseOver(ev: MouseEvent) {
-    // Find immediate child of this.content which is an ancestor of ev.target.
     const elem = this._findTargetItem(ev);
-    if (elem) { this._selected.set(elem); }
+    if (!isMenuContainer(elem)) {
+      this._selected.set(elem);     // If elem is null, intentionally deselect.
+    }
+  }
+
+  private _onMouseLeave(ev: MouseEvent) {
+    const elem = this._selected.get();
+    if (elem && !elem.classList.contains('weasel-popup-open')) {
+      // Don't deselect if there is an open submenu.
+      this._selected.set(null);
+    }
   }
 
   private _findTargetItem(ev: MouseEvent): Element|null {
+    // Find immediate child of this.content which is an ancestor of ev.target.
     const elem = findAncestorChild(this.content, ev.target as Element);
-    return elem && isSelectable(elem) && !elem.classList.contains(cssMenu.className) ? elem : null;
+    return elem && isSelectable(elem) ? elem : null;
   }
+}
+
+/**
+ * Returns true if elem is a menu (or submenu) div.
+ */
+function isMenuContainer(elem: Element|null) {
+  return elem && elem.classList.contains(cssMenu.className);
 }
 
 /**
@@ -236,7 +258,7 @@ export function menuItemSubmenu(
 
   const popupOptions: IMenuOptions = {
     placement: 'right-start',
-    trigger: ['click'],
+    trigger: [],    // no "click": don't toggle this menu on click.
     modifiers: {preventOverflow: {padding: 10}},
     boundaries: 'viewport',
     controller: ctl,
@@ -254,7 +276,7 @@ export function menuItemSubmenu(
     menu(submenu, popupOptions),
 
     // On mouseover, open the submenu. Add a delay to avoid it on transient mouseovers.
-    dom.on('mouseover', () => ctl.open({showDelay: 250})),
+    dom.on('mouseenter', () => ctl.open({showDelay: 200})),
 
     // On right-arrow, open the submenu immediately, and select the first item automatically.
     onKeyDown({

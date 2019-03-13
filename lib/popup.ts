@@ -45,11 +45,36 @@ export interface IPopupOptions {
 }
 
 /**
+ * Helper passed to IPopupFunc which represents a currently-open popup. User may use
+ * .autoDispose() and .onDispose() methods which will trigger when the popup is closed.
+ */
+export interface IOpenController extends Disposable {
+  /**
+   * Closes the popup. Uses a default delay if delayMs is omitted.
+   */
+  close(delayMs?: number): void;
+
+  /**
+   * Sets css class `cls` on elem while this popup is open, defaulting to "weasel-popup-open".
+   * Removes the class on close.
+   */
+  setOpenClass(elem: Element, cls?: string): void;
+
+  /**
+   * Returns the trigger element that opened this popup.
+   */
+  getTriggerElem(): Element;
+
+  // Note that .autoDispose() and .onDispose() methods from grainjs Disposable are available,
+  // and triggered when the popup is closed.
+}
+
+/**
  * Type for the basic function which gets called to open a generic popup. The parameter allows
  * extending IPopupOptions with extra parameters specific to a given popup.
  */
 export type IPopupFunc<T extends IPopupOptions = IPopupOptions> =
-  (ctl: PopupControl<T>, options: T) => IPopupContent;
+  (ctl: IOpenController, options: T) => IPopupContent;
 
 /**
  * Return value of IPopupFunc: a popup is a disposable object, whose .content property contains
@@ -65,7 +90,7 @@ export interface IPopupContent extends IDisposable {
  * Type for a function to create a popup as a DOM element; usable with setPopupToCreateDom().
  * This is a somewhat simpler interface than IPopupFunc.
  */
-export type IPopupDomCreator = (ctl: PopupControl) => Element;
+export type IPopupDomCreator = (ctl: IOpenController) => Element;
 
 /**
  * The basic interface to attach popup behavior to a trigger element. According to options.trigger
@@ -100,7 +125,7 @@ export function setPopupToAttach(triggerElem: Element, content: Element,
  */
 export function setPopupToCreateDom(triggerElem: Element, domCreator: IPopupDomCreator,
                                     options: IPopupOptions): PopupControl {
-  function openFunc(ctl: PopupControl) {
+  function openFunc(ctl: IOpenController) {
     const content = domCreator(ctl);
     function dispose() { domDispose(content); }
     return {content, dispose};
@@ -216,17 +241,17 @@ export class PopupControl<T extends IPopupOptions = IPopupOptions> extends Dispo
 class OpenPopupHelper extends Disposable {
   private _popper: Popper;
 
-  constructor(triggerElem: Element, openFunc: IPopupFunc, options: IPopupOptions, ctl: PopupControl) {
+  constructor(private _triggerElem: Element, openFunc: IPopupFunc, options: IPopupOptions, private _ctl: PopupControl) {
     super();
 
     // Once this object is disposed, unset all fields for easier detection of bugs.
     this.wipeOnDispose();
 
     // Call the opener function, and dispose the result when closed.
-    const {content} = this.autoDispose(openFunc(ctl, options));
+    const {content} = this.autoDispose(openFunc(this, options));
 
     // Find the requested attachment container.
-    const containerElem = _getContainer(triggerElem, options.attach || null);
+    const containerElem = _getContainer(_triggerElem, options.attach || null);
     if (containerElem) {
       containerElem.appendChild(content);
       this.onDispose(() => content.remove());
@@ -243,16 +268,38 @@ class OpenPopupHelper extends Disposable {
         options.modifiers
       ),
     };
-    this._popper = new Popper(triggerElem, content, popperOptions);
+    this._popper = new Popper(_triggerElem, content, popperOptions);
     this.onDispose(() => this._popper.destroy());
+    this.setOpenClass(_triggerElem);
 
     // On click anywhere on the page (outside triggerElem or popup content), close it.
     this.autoDispose(dom.onElem(document, 'click', (evt) => {
       const target: Node|null = evt.target as Node;
-      if (target && !content.contains(target) && !triggerElem.contains(target)) {
+      if (target && !content.contains(target) && !_triggerElem.contains(target)) {
         this.dispose();
       }
     }, {useCapture: true}));
+  }
+
+  /**
+   * Closes the popup. Uses a default delay if delayMs is omitted.
+   */
+  public close(delayMs?: number) { this._ctl.close(delayMs); }
+
+  /**
+   * Sets css class `cls` on elem while this popup is open, defaulting to "weasel-popup-open".
+   * Removes the class on close. This is set automatically on triggerElem for styling convenience.
+   */
+  public setOpenClass(elem: Element, cls: string = 'weasel-popup-open') {
+    elem.classList.add(cls);
+    this.onDispose(() => elem.classList.remove(cls));
+  }
+
+  /**
+   * Returns the trigger element that opened this popup.
+   */
+  public getTriggerElem(): Element {
+    return this._triggerElem;
   }
 
   public update() { this._popper.scheduleUpdate(); }

@@ -3,7 +3,7 @@
  */
 // tslint:disable:no-console
 import {dom, DomElementArg, makeTestId, obsArray, observable, styled, TestId} from 'grainjs';
-import {cssMenuDivider, menu, menuItem, menuItemLink, menuItemSubmenu} from '../../index';
+import {cssMenuDivider, IOpenController, menu, menuItem, menuItemLink, menuItemSubmenu} from '../../index';
 
 document.addEventListener('DOMContentLoaded', () => {
   document.body.appendChild(setupTest());
@@ -38,12 +38,14 @@ function setupTest() {
   // differently-positioned tooltps, and we'll check that hovering over each one causes 1 tooltip
   // to flip. We'll also include a body-attached tooltip which should overhang the box.
   return cssExample(testId('top'),
-    dom('button', 'My Menu', menu(makeMenu)),
+    cssButton('My Menu', menu(makeMenu)),
     dom('button', 'My Funky Menu', menu(makeFunkyMenu, funkyOptions))
   );
 }
 
-function makeMenu(): DomElementArg[] {
+function makeMenu(ctl: IOpenController): DomElementArg[] {
+  ctl.setOpenClass(ctl.getTriggerElem().parentElement!);
+
   console.log("makeMenu");
   return [
     menuItem(() => { console.log("Menu item: Cut"); }, "Cut", dom.hide(hideCut)),
@@ -116,5 +118,20 @@ const cssExample = styled('div', `
   & button {
     display: block;
     white-space: nowrap;
+  }
+  &.weasel-popup-open {
+    outline: 1px solid red;
+  }
+`);
+
+const cssButton = styled('div', `
+  width: 100px;
+  border-radius: 3px;
+  background-color: #4444aa;
+  color: white;
+  padding: 8px;
+  margin: 16px;
+  &:hover, &.weasel-popup-open {
+    background-color: #6666cc;
   }
 `);
