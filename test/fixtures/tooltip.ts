@@ -3,7 +3,7 @@
  */
 
 import {dom, DomElementMethod, makeTestId, styled, TestId} from 'grainjs';
-import {darkTooltipTheme, ITooltipOptions, tooltip} from '../../../lib/tooltip';
+import {darkTooltipTheme, ITooltipOptions, tooltip} from '../../index';
 
 document.addEventListener('DOMContentLoaded', () => {
   document.body.appendChild(setupTest());

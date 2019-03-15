@@ -18,7 +18,7 @@ describe('tooltip', () => {
 
   before(async function() {
     this.timeout(60000);      // Set a longer default timeout.
-    await driver.get(`${server.getHost()}/tooltip/`);
+    await driver.get(`${server.getHost()}/tooltip`);
   });
 
   it('should normally position relative to window', async function() {

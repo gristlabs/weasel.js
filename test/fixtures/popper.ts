@@ -58,6 +58,11 @@ function setupTest() {
   return cssSection(topEl);
 }
 
+// This is a hack: creation of such a styled element adds a '*' clause to CSS affecting elements.
+styled('div', `
+  * { box-sizing: border-box; }
+`);
+
 const cssSection = styled('div', `
   background-color: #2e3842;
   color: #a6e0db;

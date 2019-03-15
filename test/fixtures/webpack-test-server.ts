@@ -5,15 +5,13 @@ import * as serve from 'webpack-serve';
 
 // tslint:disable:no-console
 
-// TODO: It should be nice to switch here to webpack-dev-server, as for manual running, but that
-// one does not work properly out of the box (in this context), whereas webpack-serve does.
 export class WebpackServer implements IMochaServer {
   // The result of webpack-serve call. See https://github.com/webpack-contrib/webpack-serve#serveargv-options
   private _server: any;
 
   public async start() {
     const config = require(path.resolve(__dirname, 'webpack.config.js'));
-    console.log("Starting webpack-serve");
+    console.error("Starting webpack-serve");
     this._server = await serve({}, {
       config: merge(config, {
         serve: {
@@ -29,7 +27,7 @@ export class WebpackServer implements IMochaServer {
   }
 
   public async stop() {
-    console.log("Stopping webpack-serve");
+    console.error("Stopping webpack-serve");
     this._server.app.stop();
   }
 

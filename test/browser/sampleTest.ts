@@ -6,7 +6,7 @@ describe('sampleTest', () => {
 
   before(async function() {
     this.timeout(60000);      // Set a longer default timeout.
-    await driver.get(`${server.getHost()}/sampleTest/`);
+    await driver.get(`${server.getHost()}/sampleTest`);
   });
 
   async function getText(elems: promise.Promise<WebElement[]>): Promise<string[]> {

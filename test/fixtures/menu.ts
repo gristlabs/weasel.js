@@ -2,8 +2,8 @@
  * This tests our tooltip implementation.
  */
 // tslint:disable:no-console
-import {dom, DomElementArg, obsArray, observable, makeTestId, styled, TestId} from 'grainjs';
-import {cssMenuDivider, menu, menuItem, menuItemSubmenu} from '../../../lib/menu';
+import {dom, DomElementArg, makeTestId, obsArray, observable, styled, TestId} from 'grainjs';
+import {cssMenuDivider, menu, menuItem, menuItemSubmenu} from '../../index';
 
 document.addEventListener('DOMContentLoaded', () => {
   document.body.appendChild(setupTest());

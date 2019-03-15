@@ -6,7 +6,7 @@ describe('popper', () => {
 
   before(async function() {
     this.timeout(60000);      // Set a longer default timeout.
-    await driver.get(`${server.getHost()}/popper/`);
+    await driver.get(`${server.getHost()}/popper`);
   });
 
   it('should get positioned as requested', async function() {

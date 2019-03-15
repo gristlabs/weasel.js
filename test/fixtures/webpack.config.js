@@ -10,14 +10,20 @@
 'use strict';
 
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
+const fs = require('fs');
 const glob = require('glob');
 const path = require('path');
 
 // Build each */index.ts as its own bundle.
 const entries = {};
-for (const fixture of glob.sync(`${__dirname}/*/index.ts`)) {
-  entries[path.basename(path.dirname(fixture))] = fixture;
+for (const fixture of glob.sync(`${__dirname}/*.ts`)) {
+  const name = path.basename(fixture, '.ts');
+  if (name.startsWith('webpack')) { continue; }
+  entries[name] = fixture;
 }
+
+// Generic trivial html template for all projects.
+const htmlTemplate = fs.readFileSync(`${__dirname}/template.html`, 'utf8');
 
 module.exports = {
   mode: "development",
@@ -57,16 +63,23 @@ module.exports = {
     // see https://medium.com/webpack/typescript-webpack-super-pursuit-mode-83cc568dea79
     new ForkTsCheckerWebpackPlugin({ checkSyntacticErrors: true })
   ],
-  devServer: {
-    contentBase: [path.resolve(__dirname)],
+  serve: {
+    content: [path.resolve(__dirname)],
     port: 9000,
-    open: true,
+    open: { path: "/", app: process.env.OPEN_BROWSER },
 
     // Serve a trivial little index page.
-    before: (app, server) => {
-      app.get('/', (req, res) => {
-        const body = Object.keys(entries).map((e) => `<a href="${e}/">${e}</a><br>\n`).join('');
-        res.send(`<html><body>${body}</body></html>`);
+    add: (app, middleware, options) => {
+      app.use((ctx, next) => {
+        let name;
+        if (ctx.url === '/') {
+          ctx.type = 'html';
+          ctx.body = Object.keys(entries).map((e) => `<a href="${e}">${e}</a><br>\n`).join('');
+        } else if (entries.hasOwnProperty(name = path.basename(ctx.url, '.html'))) {
+          ctx.type = 'html';
+          ctx.body = htmlTemplate.replace('<NAME>', name);
+        }
+        return next();
       });
     },
   }
