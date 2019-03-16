@@ -3290,10 +3290,10 @@ mkdirp@0.5.1, mkdirp@^0.5.0, mkdirp@^0.5.1, mkdirp@~0.5.0:
   dependencies:
     minimist "0.0.8"
 
-mocha-webdriver@^0.1.6:
-  version "0.1.6"
-  resolved "https://registry.yarnpkg.com/mocha-webdriver/-/mocha-webdriver-0.1.6.tgz#aa4b6640c19a569d28028ff8464a734a8f6640cd"
-  integrity sha512-cd8T30PfidYry030xVNhGSo4YZyLyda8RBZKp5md06Fqh0fmJbHPhKAXLE/oGn0jw2ikmHgZhCjhNaSTffdvlw==
+mocha-webdriver@^0.1.7:
+  version "0.1.7"
+  resolved "https://registry.yarnpkg.com/mocha-webdriver/-/mocha-webdriver-0.1.7.tgz#d38e25ca371b14a393fc86825cf8fd4ac5aa93ce"
+  integrity sha512-N4xAoe/vtMWCt1fMeV5x9Hlvmb0wqa2e2ykJ3fzC5bnFZ4uJ3sYoT/DuZZRiQIRpwr2TIxmr2FUhv6pMbt5M6Q==
   dependencies:
     chai "^4.1.2"
     chai-as-promised "^7.1.1"

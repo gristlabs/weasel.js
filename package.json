@@ -44,7 +44,7 @@
     "cache-loader": "^1.2.5",
     "fork-ts-checker-webpack-plugin": "^0.5.1",
     "mocha": "5.2.0",
-    "mocha-webdriver": "^0.1.6",
+    "mocha-webdriver": "^0.1.7",
     "ts-loader": "^5.3.0",
     "ts-node": "7.0.1",
     "tslint": "5.11.0",
