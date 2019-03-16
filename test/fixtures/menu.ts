@@ -12,7 +12,8 @@ let resetBtn: HTMLElement;
 function setupTest() {
   return cssExample(testId('top'),
     // tabindex makes it focusable, allowing us to test focus restore issues.
-    cssButton('My Menu', menu(makeMenu), testId('btn1'), {tabindex: "-1"}),
+    cssButton('My Menu', menu(makeMenu, {parentSelectorToMark: '.' + cssExample.className}),
+      testId('btn1'), {tabindex: "-1"}),
     cssButton('My Funky Menu', menu(makeFunkyMenu, funkyOptions)),
     dom('div', 'Last action: ',
       dom('span', dom.text(lastAction), testId('last'))
@@ -27,8 +28,7 @@ function makeMenu(ctl: IOpenController): DomElementArg[] {
   const hideCut = observable(false);
   const pasteList = obsArray(['Paste 1']);
 
-  // Set some custom css classes while menu is open.
-  ctl.setOpenClass(ctl.getTriggerElem().parentElement!);
+  // Set a custom css class while menu is open.
   ctl.setOpenClass(document.body, 'custom-menu-open');
 
   console.log("makeMenu");

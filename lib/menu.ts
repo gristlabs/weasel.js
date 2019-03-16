@@ -25,6 +25,11 @@ export interface IMenuOptions extends IPopupOptions {
   isSubMenu?: boolean;
   selectOnOpen?: boolean;
   menuCssClass?: string;    // If provided, applies the css class to the menu container.
+
+  // If given, the menu will set the `weasel-popup-open` css class on the matching ancestor of the
+  // trigger element (in addition to setting it on the trigger element itself). Useful to keep an
+  // element highlighted while an associated menu is open.
+  parentSelectorToMark?: string;
 }
 
 export interface ISubMenuOptions {
@@ -102,6 +107,14 @@ export class Menu extends Disposable implements IPopupContent {
 
   constructor(private ctl: IOpenController, items: DomElementArg[], options: IMenuOptions = {}) {
     super();
+
+    // Set `weasel-popup-open` class on the ancestor of trigger that matches parentSelectorToMark.
+    if (options && options.parentSelectorToMark) {
+      const parent = ctl.getTriggerElem().closest(options.parentSelectorToMark);
+      if (parent) {
+        ctl.setOpenClass(parent);
+      }
+    }
 
     this.content = cssMenu({class: options.menuCssClass || ''},
       items,
