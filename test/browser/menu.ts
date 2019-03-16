@@ -93,7 +93,7 @@ describe('menu', () => {
 
   it('should act on Enter even if item selected with mouseover', async function() {
     // Move mouse to select an item.
-    await driver.find('.test-btn1').click();
+    await driver.find('.test-btn1').mouseMove().click();
     await driver.find('.test-copy').mouseMove();
     assert.equal(await driver.find('.test-copy').hasFocus(), true);
 
@@ -103,7 +103,7 @@ describe('menu', () => {
   });
 
   it('should highlight item on mouseover correctly', async function() {
-    await driver.find('.test-btn1').click();
+    await driver.find('.test-btn1').mouseMove().click();
     // Moving the mouse over an item focuses (and selects) the item.
     await driver.find('.test-copy').mouseMove();
     assert.equal(await driver.find('.test-copy').hasFocus(), true);
@@ -129,7 +129,7 @@ describe('menu', () => {
   });
 
   it('should open submenu and act on item clicks', async function() {
-    await driver.find('.test-btn1').click();
+    await driver.find('.test-btn1').mouseMove().click();
     await assertOpen('.test-menu1', true);
 
     // Mouse over on submenu item opens the submenu.
@@ -186,7 +186,7 @@ describe('menu', () => {
 
   it('should close submenu when a different parent item is selected', async function() {
     // Opent the menu and submenu.
-    await driver.find('.test-btn1').click();
+    await driver.find('.test-btn1').mouseMove().click();
     await driver.find('.test-sub-item').mouseMove();
     await driver.findWait(1, '.test-submenu1');
     await assertOpen('.test-submenu1', true);
