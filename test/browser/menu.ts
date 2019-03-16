@@ -194,5 +194,41 @@ describe('menu', () => {
     // Mouse over a different parent item.
     await driver.find('.test-cut').mouseMove();
     await assertOpen('.test-submenu1', false);
+    await assertOpen('.test-menu1', true);
+    await driver.sendKeys(Key.ESCAPE);
+    await assertOpen('.test-menu1', false);
+  });
+
+  it('should support setOpenClass() while a menu is open', async function() {
+    // Fixture code sets the default css class (.weasel-popup-open) on the example div
+    // (.test-top), and a custom css class (.custom-menu-open) on <body>.
+    assert.notInclude(await driver.find('.test-top').getAttribute('class'), 'weasel-popup-open');
+    assert.notInclude(await driver.find('body').getAttribute('class'), 'custom-menu-open');
+
+    await driver.find('.test-btn1').click();
+    await assertOpen('.test-menu1', true);
+    assert.include(await driver.find('.test-top').getAttribute('class'), 'weasel-popup-open');
+    assert.include(await driver.find('body').getAttribute('class'), 'custom-menu-open');
+
+    await driver.sendKeys(Key.ESCAPE);
+    await assertOpen('.test-menu1', false);
+    assert.notInclude(await driver.find('.test-top').getAttribute('class'), 'weasel-popup-open');
+    assert.notInclude(await driver.find('body').getAttribute('class'), 'custom-menu-open');
+  });
+
+  it('should not steal focus set by menu actions', async function() {
+    // First check that open/close leaves the menu-trigger button focused.
+    await driver.find('.test-btn1').click();
+    await driver.sendKeys(Key.ESCAPE);
+    await assertOpen('.test-menu1', false);
+    assert.equal(await driver.find('.test-btn1').hasFocus(), true);
+
+    // Now click the "Focus Reset" menu item which SHOULD focus the Reset button. We are making
+    // sure that focus does NOT get restored to the menu-trigger button if an action changed it.
+    await driver.find('.test-btn1').click();
+    await driver.find('.test-focus-reset').click();
+    await assertOpen('.test-menu1', false);
+    assert.equal(await driver.find('.test-btn1').hasFocus(), false);
+    assert.equal(await driver.find('.test-reset').hasFocus(), true);
   });
 });

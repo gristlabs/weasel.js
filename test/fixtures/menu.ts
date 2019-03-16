@@ -7,15 +7,19 @@ import {cssMenuDivider, IOpenController, menu, menuItem, menuItemLink, menuItemS
 
 const testId: TestId = makeTestId('test-');
 const lastAction = observable("");
+let resetBtn: HTMLElement;
 
 function setupTest() {
   return cssExample(testId('top'),
-    cssButton('My Menu', menu(makeMenu), testId('btn1')),
+    // tabindex makes it focusable, allowing us to test focus restore issues.
+    cssButton('My Menu', menu(makeMenu), testId('btn1'), {tabindex: "-1"}),
     cssButton('My Funky Menu', menu(makeFunkyMenu, funkyOptions)),
     dom('div', 'Last action: ',
       dom('span', dom.text(lastAction), testId('last'))
     ),
-    dom('button', 'Reset', dom.on('click', () => lastAction.set('')), testId('reset')),
+    resetBtn = cssResetButton('Reset',
+      dom.on('click', () => lastAction.set('')), testId('reset')
+    ),
   );
 }
 
@@ -23,7 +27,9 @@ function makeMenu(ctl: IOpenController): DomElementArg[] {
   const hideCut = observable(false);
   const pasteList = obsArray(['Paste 1']);
 
+  // Set some custom css classes while menu is open.
   ctl.setOpenClass(ctl.getTriggerElem().parentElement!);
+  ctl.setOpenClass(document.body, 'custom-menu-open');
 
   console.log("makeMenu");
   return [
@@ -47,6 +53,7 @@ function makeMenu(ctl: IOpenController): DomElementArg[] {
       hideCut.set(!hideCut.get());
       lastAction.set("Show/Hide Cut");
     }, dom.text((use) => use(hideCut) ? "Show Cut" : "Hide Cut")),
+    menuItem(() => resetBtn.focus(), 'Focus Reset', testId('focus-reset')),
     cssMenuDivider(),
     menuItemSubmenu(makePasteSubmenu, {}, "Paste Special", testId('sub-item')),
   ];
@@ -119,6 +126,12 @@ const cssButton = styled('div', `
   margin: 16px 0px;
   &:hover, &.weasel-popup-open {
     background-color: #6666cc;
+  }
+`);
+
+const cssResetButton = styled('button', `
+  &:focus {
+    outline: 3px solid yellow;
   }
 `);
 

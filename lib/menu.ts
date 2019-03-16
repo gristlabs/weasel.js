@@ -96,11 +96,11 @@ const defaultMenuOptions: IMenuOptions = {
  * Implementation of the Menu. See menu() documentation for usage.
  */
 export class Menu extends Disposable implements IPopupContent {
-  public readonly content: Element;
+  public readonly content: HTMLElement;
 
-  private _selected: Element|null = null;
+  private _selected: HTMLElement|null = null;
 
-  constructor(ctl: IOpenController, items: DomElementArg[], options: IMenuOptions = {}) {
+  constructor(private ctl: IOpenController, items: DomElementArg[], options: IMenuOptions = {}) {
     super();
 
     this.content = cssMenu({class: options.menuCssClass || ''},
@@ -122,25 +122,26 @@ export class Menu extends Disposable implements IPopupContent {
     this.onDispose(() => domDispose(this.content));
 
     setTimeout(() =>
-      (options.selectOnOpen ? this._nextIndex() : (this.content as HTMLElement).focus()), 0);
+      (options.selectOnOpen ? this._nextIndex() : this.content.focus()), 0);
+  }
 
-    // The focus restoration is mainly needed for the sake of submenus.
-    ctl.onDispose(() => (ctl.getTriggerElem() as HTMLElement).focus());
+  public onRemove() {
+    // The focus restoration is mainly needed for the sake of submenus. When focus has already
+    // moved elsewhere, don't restore it. We need to check it before the menu is removed from DOM.
+    if (this.content.contains(document.activeElement)) {
+      (this.ctl.getTriggerElem() as HTMLElement).focus();
+    }
   }
 
   private _nextIndex(): void {
-    const content = this.content;
-    const getNext = (_elem: Element|null) =>
-      (_elem && _elem.nextElementSibling) || content.firstElementChild;
-    const next = getNextSelectable(this._selected, getNext);
+    const next = getNextSelectable(this._selected,
+      (elem) => (elem && elem.nextElementSibling) || this.content.firstElementChild);
     if (next) { this._setSelected(next); }
   }
 
   private _prevIndex(): void {
-    const content = this.content;
-    const getNext = (_elem: Element|null) =>
-      (_elem && _elem.previousElementSibling) || content.lastElementChild;
-    const next = getNextSelectable(this._selected, getNext);
+    const next = getNextSelectable(this._selected,
+      (elem) => (elem && elem.previousElementSibling) || this.content.lastElementChild);
     if (next) { this._setSelected(next); }
   }
 
@@ -159,7 +160,7 @@ export class Menu extends Disposable implements IPopupContent {
     }
   }
 
-  private _findTargetItem(ev: MouseEvent): Element|null {
+  private _findTargetItem(ev: MouseEvent): HTMLElement|null {
     // Find immediate child of this.content which is an ancestor of ev.target.
     const elem = findAncestorChild(this.content, ev.target as Element);
     return elem && isSelectable(elem) ? elem : null;
@@ -168,7 +169,7 @@ export class Menu extends Disposable implements IPopupContent {
   // When the selected element changes, update the classes of the formerly and newly-selected
   // elements and call any callbacks bound to selection stored on the elements.
   // Also focus the newly-selected element for keyboard events.
-  private _setSelected(elem: Element|null) {
+  private _setSelected(elem: HTMLElement|null) {
     const prev = this._selected;
     if (elem === prev) { return; }
     if (prev) {
@@ -183,7 +184,7 @@ export class Menu extends Disposable implements IPopupContent {
     }
     this._selected = elem;
     // Focus the item if available, or the parent menu container otherwise.
-    ((elem || this.content) as HTMLElement).focus();
+    (elem || this.content).focus();
   }
 }
 
@@ -199,16 +200,17 @@ function isMenuContainer(elem: Element|null) {
  * Element (based on isSelectable). Returns null if the function to retrieve the next Element returns
  * null. Always returns startElem if returned by getNext function, to prevent an infinite loop.
  */
-function getNextSelectable(startElem: Element|null, getNext: (elem: Element|null) => Element|null): Element|null {
+function getNextSelectable(startElem: Element|null,
+                           getNext: (elem: Element|null) => Element|null): HTMLElement|null {
   let next = getNext(startElem);
   while (next && next !== startElem && !isSelectable(next)) { next = getNext(next); }
-  return next;
+  return next as HTMLElement|null;
 }
 
 /**
  * Returns a boolean indicating whether the Element is selectable in the menu.
  */
-function isSelectable(elem: Element): boolean {
+function isSelectable(elem: Element): elem is HTMLElement {
   // Offset height > 0 is used to determine if the element is visible.
   return elem.hasAttribute('tabIndex') && !elem.classList.contains('disabled') &&
     (elem as HTMLElement).offsetHeight > 0;

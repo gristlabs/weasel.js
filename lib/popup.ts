@@ -84,6 +84,9 @@ export type IPopupFunc<T extends IPopupOptions = IPopupOptions> =
  */
 export interface IPopupContent extends IDisposable {
   readonly content: Element;
+
+  // Called before content is removed from DOM. (Note that disposers run after.)
+  onRemove?(): void;
 }
 
 /**
@@ -248,13 +251,14 @@ class OpenPopupHelper extends Disposable {
     this.wipeOnDispose();
 
     // Call the opener function, and dispose the result when closed.
-    const {content} = this.autoDispose(openFunc(this, options));
+    const popupContent: IPopupContent = this.autoDispose(openFunc(this, options));
+    const {content, onRemove = noop} = popupContent;
 
     // Find the requested attachment container.
     const containerElem = _getContainer(_triggerElem, options.attach || null);
     if (containerElem) {
       containerElem.appendChild(content);
-      this.onDispose(() => content.remove());
+      this.onDispose(() => { onRemove.call(popupContent); content.remove(); });
     }
 
     // Prepare and create the Popper instance, which places the content according to the options.
