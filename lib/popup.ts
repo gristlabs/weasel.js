@@ -274,7 +274,7 @@ class OpenPopupHelper extends Disposable {
 
     // Prepare and create the Popper instance, which places the content according to the options.
     const popperOptions: Popper.PopperOptions = {
-      placement: options.placement,
+      placement: options.placement || 'bottom',
       modifiers: (options.boundaries ?
         defaultsDeep(options.modifiers, {
           flip: {boundariesElement: options.boundaries},
