@@ -11,7 +11,7 @@
     "baseUrl": ".",
     "outDir": "./dist",
     "plugins": [{
-      "name": "tslint-language-service"
+      "name": "typescript-tslint-plugin"
     }]
   },
   "include": [
