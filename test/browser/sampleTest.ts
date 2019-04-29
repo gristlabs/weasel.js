@@ -1,4 +1,4 @@
-import {assert, driver, Key, promise, useServer, WebElement} from 'mocha-webdriver';
+import {assert, driver, Key, useServer, WebElement} from 'mocha-webdriver';
 import {server} from '../fixtures/webpack-test-server';
 
 describe('sampleTest', () => {
@@ -9,7 +9,7 @@ describe('sampleTest', () => {
     await driver.get(`${server.getHost()}/sampleTest`);
   });
 
-  async function getText(elems: promise.Promise<WebElement[]>): Promise<string[]> {
+  async function getText(elems: Promise<WebElement[]>): Promise<string[]> {
     return Promise.all((await elems).map((elem) => elem.getText()));
   }
 

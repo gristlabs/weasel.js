@@ -8,7 +8,7 @@
     "build": "tsc",
     "test": "mocha 'test/browser/**/*.{js,ts}'",
     "test-debug": "mocha --bail test/browser/**/*.{js,ts} --no-exit",
-    "test-manual": "webpack-serve --config test/fixtures/webpack.config.js",
+    "test-manual": "webpack-dev-server --config test/fixtures/webpack.config.js",
     "prepack": "[ ! -f .buildme ] || npm run build",
     "preinstall": "[ ! -f .buildme ] || npm run build"
   },
@@ -28,31 +28,29 @@
   },
   "homepage": "https://github.com/gristlabs/weasel.js#readme",
   "dependencies": {
-    "grainjs": "git+https://github.com/gristlabs/grainjs.git#975f9df3830d96800e10ce9d4a3dda5f053fe290",
+    "grainjs": "git+https://github.com/gristlabs/grainjs.git#41e8a3cedc67af91ee0cc4ee07f67ece72b81963",
     "lodash": "^4.17.11",
-    "popper.js": "1.14.6"
+    "popper.js": "1.15.0"
   },
   "devDependencies": {
     "@types/chai": "^4.1.7",
     "@types/chai-as-promised": "^7.1.0",
-    "@types/lodash": "^4.14.118",
-    "@types/mocha": "^5.2.5",
-    "@types/node": "^10.12.3",
+    "@types/lodash": "^4.14.123",
+    "@types/mocha": "^5.2.6",
+    "@types/node": "^11.13.8",
     "@types/selenium-webdriver": "^4.0.0",
-    "@types/webpack-merge": "^4.1.3",
-    "@types/webpack-serve": "^2.0.0",
-    "cache-loader": "^1.2.5",
-    "fork-ts-checker-webpack-plugin": "^0.5.1",
-    "mocha": "5.2.0",
-    "mocha-webdriver": "^0.1.7",
-    "ts-loader": "^5.3.0",
-    "ts-node": "7.0.1",
-    "tslint": "5.11.0",
+    "@types/webpack-dev-server": "^3.1.5",
+    "cache-loader": "^3.0.0",
+    "fork-ts-checker-webpack-plugin": "^1.2.0",
+    "mocha": "6.1.4",
+    "mocha-webdriver": "^0.1.11",
+    "ts-loader": "^5.4.4",
+    "ts-node": "8.1.0",
+    "tslint": "5.16.0",
     "tslint-language-service": "0.9.9",
-    "typescript": "3.1.6",
-    "webpack": "^4.25.1",
-    "webpack-cli": "^3.1.2",
-    "webpack-merge": "^4.1.4",
-    "webpack-serve": "^2.0.2"
+    "typescript": "3.4.5",
+    "webpack": "^4.30.0",
+    "webpack-cli": "^3.3.1",
+    "webpack-dev-server": "^3.3.1"
   }
 }

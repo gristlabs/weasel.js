@@ -1,7 +1,7 @@
 /**
  * Test and develop a widget by running the following at the root of the git checkout:
  *
- *    bin/webpack-serve --config test/fixtures/projects/webpack.config.js
+ *    bin/webpack-dev-server --config test/fixtures/webpack.config.js
  *
  * It will build and serve the demo code with live-reload at
  *
@@ -63,24 +63,17 @@ module.exports = {
     // see https://medium.com/webpack/typescript-webpack-super-pursuit-mode-83cc568dea79
     new ForkTsCheckerWebpackPlugin({ checkSyntacticErrors: true })
   ],
-  serve: {
-    content: [path.resolve(__dirname)],
+  devServer: {
+    contentBase: path.resolve(__dirname),
     port: 9000,
-    open: { path: "/", app: process.env.OPEN_BROWSER },
+    open: process.env.OPEN_BROWSER || 'Google Chrome',
 
-    // Serve a trivial little index page.
-    add: (app, middleware, options) => {
-      app.use((ctx, next) => {
-        let name;
-        if (ctx.url === '/') {
-          ctx.type = 'html';
-          ctx.body = Object.keys(entries).map((e) => `<a href="${e}">${e}</a><br>\n`).join('');
-        } else if (entries.hasOwnProperty(name = path.basename(ctx.url, '.html'))) {
-          ctx.type = 'html';
-          ctx.body = htmlTemplate.replace('<NAME>', name);
-        }
-        return next();
-      });
+    // Serve a trivial little index page with a directory, and a template for each project.
+    before: (app, server) => {
+      app.get('/', (req, res) =>
+        res.send(Object.keys(entries).map((e) => `<a href="${e}">${e}</a><br>\n`).join('')));
+      app.get(Object.keys(entries).map((e) => `/${e}`), (req, res) =>
+        res.send(htmlTemplate.replace('<NAME>', path.basename(req.url))));
     },
   }
 };
