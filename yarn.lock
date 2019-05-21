@@ -2087,9 +2087,9 @@ graceful-fs@^4.1.11, graceful-fs@^4.1.15, graceful-fs@^4.1.2:
   resolved "https://registry.yarnpkg.com/graceful-fs/-/graceful-fs-4.1.15.tgz#ffb703e1066e8a0eeaa4c8b80ba9253eeefbfb00"
   integrity sha512-6uHUhOPEBgQ24HM+r6b/QwWfZq+yiFcipKFrOFiBEnWdy5sdzYoi+pJeQaPI5qOLRFqWmAXUPQNsielzdLoecA==
 
-"grainjs@git+https://github.com/gristlabs/grainjs.git#01db0b60183caabfa4a213b494061001db4380b4":
+"grainjs@git+https://github.com/gristlabs/grainjs.git#edb54fb532a458c6cc41dfecf5a170256d164857":
   version "0.1.1"
-  resolved "git+https://github.com/gristlabs/grainjs.git#01db0b60183caabfa4a213b494061001db4380b4"
+  resolved "git+https://github.com/gristlabs/grainjs.git#edb54fb532a458c6cc41dfecf5a170256d164857"
 
 growl@1.10.5:
   version "1.10.5"

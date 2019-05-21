@@ -69,7 +69,8 @@ export function selectElem(triggerElem: Element, createFunc: MenuCreateFunc, opt
 }
 
 // Helper for menuElem and selectElem.
-function baseElem(createFn: MenuClassCons, triggerElem: Element, createFunc: MenuCreateFunc, options: IMenuOptions = {}) {
+function baseElem(createFn: MenuClassCons, triggerElem: Element, createFunc: MenuCreateFunc,
+                  options: IMenuOptions = {}) {
   // This is similar to defaultsDeep but avoids merging arrays, since options.trigger should have
   // the exact value from options if present.
   options = mergeWith({}, defaultMenuOptions, options,
@@ -141,9 +142,9 @@ class BaseMenu extends Disposable implements IPopupContent {
 
     this.content = cssMenu({class: options.menuCssClass || ''},
       items,
-      dom.on('mouseover', (ev) => this._onMouseOver(ev as MouseEvent)),
-      dom.on('mouseleave', (ev) => this._onMouseLeave(ev as MouseEvent)),
-      dom.on('click', (ev) => this._findTargetItem(ev as MouseEvent) ? ctl.close(0) : ev.stopPropagation()),
+      dom.on('mouseover', (ev) => this._onMouseOver(ev)),
+      dom.on('mouseleave', (ev) => this._onMouseLeave(ev)),
+      dom.on('click', (ev) => this._findTargetItem(ev) ? ctl.close(0) : ev.stopPropagation()),
       onKeyDown({
         ArrowDown: () => this.nextIndex(),
         ArrowUp: () => this.prevIndex(),
@@ -241,7 +242,7 @@ export class Select extends BaseMenu implements IPopupContent {
     super(ctl, items, options);
 
     // Add key handlers to the trigger element as well as the menu if it is an input.
-    this.autoDispose(onKeyElem(ctl.getTriggerElem(), 'keydown', {
+    this.autoDispose(onKeyElem(ctl.getTriggerElem() as HTMLElement, 'keydown', {
       ArrowDown: () => this.nextIndex(),
       ArrowUp: () => this.prevIndex(),
       Escape: () => ctl.close(0)

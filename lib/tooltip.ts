@@ -1,4 +1,4 @@
-import {dom, DomCreateFunc0, DomElementMethod, styled} from 'grainjs';
+import {dom, DomCreateFunc, DomElementMethod, styled} from 'grainjs';
 import defaults = require('lodash/defaults');
 import {IPopupOptions, setPopupToCreateDom} from './popup';
 
@@ -20,7 +20,7 @@ export interface ITooltipOptions extends IPopupOptions {
  * for customizing the arrow as well (see cssTooltip below).
  */
 export interface ITooltipTheme {
-  tooltip: DomCreateFunc0<Element>;
+  tooltip: DomCreateFunc<Element>;
 }
 
 const defaultTooltipOptions: ITooltipOptions = {
