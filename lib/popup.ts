@@ -8,7 +8,7 @@ import Popper from 'popper.js';
  * On what event the trigger element opens the popup. E.g. 'hover' is suitable for a tooltip,
  * while 'click' is suitable for a dropdown menu.
  */
-type Trigger  = 'click' | 'contextmenu' |  'hover' | 'focus' | AttachTriggerFunc;
+type Trigger  = 'click' | 'contextmenu' |  'hover' | 'focus' | {keys: string[]} | AttachTriggerFunc;
 
 /**
  * AttachTriggerFunc allows setting custom trigger events in a callback function to toggle the
@@ -177,6 +177,8 @@ export class PopupControl<T extends IPopupOptions = IPopupOptions> extends Dispo
         if (typeof trigger === 'function') {
           // Call instances of AttachTriggerFunc to attach any custom trigger events.
           trigger(triggerElem, this);
+        } else if (typeof trigger === "object" && "keys" in trigger) {
+          dom.onElem(triggerElem, 'keydown', (ev) => trigger.keys.includes(ev.key) && this.toggle());
         } else {
           switch (trigger) {
             case 'click':

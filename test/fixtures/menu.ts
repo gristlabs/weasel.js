@@ -30,7 +30,10 @@ function setupTest() {
     cssButton('My Menu',
       testId('btn1'),
       { tabindex: "-1" },
-      menu(makeMenu, { parentSelectorToMark: '.' + cssExample.className })
+      menu(makeMenu, {
+        parentSelectorToMark: '.' + cssExample.className,
+        trigger: ['click', {keys: ['Enter']}],
+      })
     ),
     cssButton('My Contextmenu',
       testId('btn2'),

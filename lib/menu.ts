@@ -13,7 +13,7 @@
  * Clicks on items will normally propagate to the menu, where they get caught and close the menu.
  * If a click on an item should not close the menu, the item should stop the click's propagation.
  */
-import {dom, domDispose, DomElementArg, DomElementMethod, styled} from 'grainjs';
+import {dom, domDispose, DomElementArg, DomElementMethod, DomMethod, EventCB, styled} from 'grainjs';
 import {Disposable, onKeyDown, onKeyElem} from 'grainjs';
 import defaultsDeep = require('lodash/defaultsDeep');
 import mergeWith = require('lodash/mergeWith');
@@ -130,7 +130,11 @@ export const defaultMenuOptions: IMenuOptions = {
  * Implementation of the BaseMenu. Extended by Menu and Select.
  */
 export class BaseMenu extends Disposable implements IPopupContent {
+  // The outer element (required by IPopupContent), which contains _menuContent.
   public readonly content: HTMLElement;
+
+  // The UL element containing the actual menu items.
+  protected _menuContent: HTMLElement;
 
   private _selected: HTMLElement|null = null;
 
@@ -147,22 +151,27 @@ export class BaseMenu extends Disposable implements IPopupContent {
       }
     }
 
-    this.content = cssMenu({class: options.menuCssClass || ''},
-      items,
-      stretchContainer ? (elem) => stretchMenuToContainer(elem, stretchContainer) : null,
-      dom.on('mouseover', (ev) => this._onMouseOver(ev)),
-      dom.on('mouseleave', (ev) => this._onMouseLeave(ev)),
-      dom.on('click', (ev) => this._findTargetItem(ev) ? ctl.close(0) : ev.stopPropagation()),
-      onKeyDown({
-        ArrowDown: () => this.nextIndex(),
-        ArrowUp: () => this.prevIndex(),
-        ...options.isSubMenu ? {
-          ArrowLeft: () => ctl.close(0),
-        } : {
+    this.content = cssMenuWrap(
+      this._menuContent = cssMenu({class: options.menuCssClass || ''},
+        items,
+        stretchContainer ? (elem) => stretchMenuToContainer(elem, stretchContainer) : null,
+        mouseOverOnMove((ev) => this._onMouseOver(ev)),
+        dom.on('mouseleave', (ev) => this._onMouseLeave(ev)),
+        onKeyDown({
+          ArrowDown: () => this.nextIndex(),
+          ArrowUp: () => this.prevIndex(),
+          ...options.isSubMenu ? {
+            ArrowLeft: () => ctl.close(0),
+          } : {},
+        }),
+      ),
+      // Events set on the parent of _menuContent receive events bubbled up from submenus.
+      dom.on('click', (ev) => isInSelectableItem(ev.target as Element) ? ctl.close(0) : ev.stopPropagation()),
+      options.isSubMenu ? null :
+        onKeyDown({
           Escape: () => ctl.close(0),
           Enter: () => ctl.close(0),    // gets bubbled key after action is taken.
-        }
-      }),
+        }),
     );
     this.onDispose(() => domDispose(this.content));
   }
@@ -177,13 +186,13 @@ export class BaseMenu extends Disposable implements IPopupContent {
 
   protected nextIndex(): void {
     const next = getNextSelectable(this._selected,
-      (elem) => (elem && elem.nextElementSibling) || this.content.firstElementChild);
+      (elem) => (elem && elem.nextElementSibling) || this._menuContent.firstElementChild);
     if (next) { this.setSelected(next); }
   }
 
   protected prevIndex(): void {
     const next = getNextSelectable(this._selected,
-      (elem) => (elem && elem.previousElementSibling) || this.content.lastElementChild);
+      (elem) => (elem && elem.previousElementSibling) || this._menuContent.lastElementChild);
     if (next) { this.setSelected(next); }
   }
 
@@ -205,12 +214,12 @@ export class BaseMenu extends Disposable implements IPopupContent {
     }
     this._selected = elem;
     // Focus the item if available, or the parent menu container otherwise.
-    (elem || this.content).focus();
+    (elem || this._menuContent).focus();
   }
 
   private _onMouseOver(ev: MouseEvent) {
-    const elem = this._findTargetItem(ev);
-    if (!isMenuContainer(elem)) {
+    if (!isMenuContainer(ev.target as Element)) {
+      const elem = this._findTargetItem(ev);
       this.setSelected(elem);     // If elem is null, intentionally deselect.
     }
   }
@@ -224,8 +233,8 @@ export class BaseMenu extends Disposable implements IPopupContent {
   }
 
   private _findTargetItem(ev: MouseEvent): HTMLElement|null {
-    // Find immediate child of this.content which is an ancestor of ev.target.
-    const elem = findAncestorChild(this.content, ev.target as Element);
+    // Find immediate child of this._menuContent which is an ancestor of ev.target.
+    const elem = findAncestorChild(this._menuContent, ev.target as Element);
     return elem && isSelectable(elem) ? elem : null;
   }
 }
@@ -238,7 +247,7 @@ export class Menu extends BaseMenu implements IPopupContent {
     super(ctl, items, options);
 
     setTimeout(() =>
-      (options.selectOnOpen ? this.nextIndex() : this.content.focus()), 0);
+      (options.selectOnOpen ? this.nextIndex() : this._menuContent.focus()), 0);
   }
 }
 
@@ -287,11 +296,19 @@ function isSelectable(elem: Element): elem is HTMLElement {
 }
 
 /**
+ * Whether the given element is part of a selectable item. A click on it will close menus.
+ */
+function isInSelectableItem(elem: Element): boolean {
+  const item = findAncestorChild(elem.closest('.' + cssMenu.className)!, elem);
+  return item ? isSelectable(item) : false;
+}
+
+/**
  * Helper function which returns the direct child of ancestor which is an ancestor of elem, or
  * null if elem is not a descendant of ancestor.
  */
 function findAncestorChild(ancestor: Element, elem: Element|null): Element|null {
-  while (elem && elem.parentNode !== ancestor) {
+  while (elem && elem.parentElement !== ancestor) {
     elem = elem.parentElement;
   }
   return elem;
@@ -301,10 +318,25 @@ function findAncestorChild(ancestor: Element, elem: Element|null): Element|null 
  * Sets the width of the given menu element to match the given container element. Used by
  * IMenuOptions setting 'stretchToSelector'.
  */
-function stretchMenuToContainer(menuElem: HTMLElement, containerElem: Element): void {
-  const style = menuElem.style;
+function stretchMenuToContainer(menuEl: HTMLElement, containerElem: Element): void {
+  const style = menuEl.style;
   style.minWidth = containerElem.getBoundingClientRect().width + 'px';
   style.marginLeft = style.marginRight = '0';
+}
+
+/**
+ * A version of dom.on('mouseover') that doesn't start firing until there is first a 'mousemove'.
+ * This way if an element is created under the mouse cursor (triggered by the keyboard, for
+ * instance) it's not immediately highlighted, but only when a user moves the mouse.
+ */
+function mouseOverOnMove<T extends EventTarget>(callback: EventCB<MouseEvent, T>): DomMethod<T> {
+  return (elem) => {
+    const lis = dom.onElem(elem, 'mousemove', (...args) => {
+      lis.dispose();
+      dom.onElem(elem, 'mouseover', callback);
+      callback(...args);
+    });
+  };
 }
 
 /**
@@ -323,7 +355,7 @@ export function menuItemSubmenu(
     modifiers: {preventOverflow: {padding: 10}},
     boundaries: 'viewport',
     controller: ctl,
-    attach: null,
+    attach: '.' + cssMenuWrap.className,
     isSubMenu: true,
     ...options
   };
@@ -354,8 +386,17 @@ export function menuItemSubmenu(
   );
 }
 
-export const cssMenu = styled('ul', `
+export const cssMenuWrap = styled('div', `
   position: absolute;
+  display: flex;
+  flex-direction: column;
+  outline: none;
+`);
+
+export const cssMenu = styled('ul', `
+  max-height: calc(95vh - 10px);
+  box-sizing: border-box;
+  overflow: auto;
   outline: none;
   list-style: none;
   margin: 2px;

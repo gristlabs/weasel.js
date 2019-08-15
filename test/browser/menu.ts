@@ -1,4 +1,4 @@
-import {assert, driver, Key, useServer} from 'mocha-webdriver';
+import {assert, driver, Key, stackWrapFunc, useServer} from 'mocha-webdriver';
 import {server} from '../fixtures/webpack-test-server';
 
 describe('menu', () => {
@@ -13,13 +13,11 @@ describe('menu', () => {
     await driver.find('.test-reset').click();
   });
 
-  async function assertOpen(testId: string, yesNo: boolean) {
-    if (yesNo) {
-      assert.equal(await driver.find(testId).isDisplayed(), yesNo);
-    } else {
-      await assert.isRejected(driver.find(testId), /Unable to locate/);
-    }
-  }
+  const assertOpen = stackWrapFunc(async function(selector: string, yesNo: boolean) {
+    const elemPromise = driver.find(selector);
+    assert.equal(await elemPromise.isPresent() && await elemPromise.isDisplayed(), yesNo,
+      `Menu ${selector} is not ${yesNo ? 'open' : 'closed'}`);
+  });
 
   it('should toggle on trigger click', async function() {
     // Open menu, check we see something.
@@ -175,6 +173,13 @@ describe('menu', () => {
 
     // First non-disabled item should be selected.
     assert.equal(await driver.find('.test-cut2').hasFocus(), true);
+
+    // Clicking on a disabled element should do nothing. Menu should stay open, and no action
+    // should run.
+    await driver.find('.test-disabled2').click();
+    await assertOpen('.test-submenu1', true);
+    await assertOpen('.test-menu1', true);
+    assert.equal(await driver.find('.test-last').getText(), '');
 
     // LEFT key should close.
     await driver.sendKeys(Key.LEFT);
