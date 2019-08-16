@@ -299,6 +299,8 @@ function isSelectable(elem: Element): elem is HTMLElement {
  * Whether the given element is part of a selectable item. A click on it will close menus.
  */
 function isInSelectableItem(elem: Element): boolean {
+  // Similar to _findTargetItem, but finds the menu item (direct child of cssMenu) containing
+  // elem, regardless of which menu or submenu it's in, and returns whether it's selectable.
   const item = findAncestorChild(elem.closest('.' + cssMenu.className)!, elem);
   return item ? isSelectable(item) : false;
 }
