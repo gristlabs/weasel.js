@@ -299,12 +299,14 @@ class OpenPopupHelper extends Disposable {
     this.setOpenClass(_triggerElem);
 
     // On click anywhere on the page (outside triggerElem or popup content), close it.
-    this.autoDispose(dom.onElem(document, 'click', (evt) => {
+    const onClick = (evt: MouseEvent) => {
       const target: Node|null = evt.target as Node;
       if (target && !content.contains(target) && !_triggerElem.contains(target)) {
         this.dispose();
       }
-    }, {useCapture: true}));
+    };
+    this.autoDispose(dom.onElem(document, 'click', onClick, {useCapture: true}));
+    this.autoDispose(dom.onElem(document, 'contextmenu', onClick, {useCapture: true}));
   }
 
   /**
