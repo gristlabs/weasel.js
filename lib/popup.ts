@@ -158,6 +158,14 @@ export class PopupControl<T extends IPopupOptions = IPopupOptions> extends Dispo
   private _showDelay: number = 0;
   private _hideDelay: number = 0;
 
+  constructor() {
+    super();
+    this.onDispose(() => {
+      if (this._openTimer !== undefined) { clearTimeout(this._openTimer); }
+      if (this._closeTimer !== undefined) { clearTimeout(this._closeTimer); }
+    });
+  }
+
   public attachElem(triggerElem: Element, openFunc: IPopupFunc<T>, options: T): void {
     this._showDelay = options.showDelay || 0;
     this._hideDelay = options.hideDelay || 0;

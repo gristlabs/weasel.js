@@ -6,7 +6,7 @@
  * entirely by a custom item. For an item to be a selectable menu item, it needs `tabindex=-1`
  * attribute set. If unset, or if the "disabled" class is set, the item will not be selectable.
  *
- * Further, if `dom.data('menuItemSelected', (yesNo: boolean, elem) => {})` is set, that callback
+ * Further, if `dom.data('menuItemSelected', () => (yesNo: boolean, elem) => {})` is set, that callback
  * will be called whenever the item is selected and unselected. In addition, the selected item
  * gets a css class. A callback should be seldom needed, but it is use for nested menus.
  *
@@ -37,6 +37,11 @@ export interface IMenuOptions extends IPopupOptions {
   // If given, sets the width of the opened menu to equal that of the matching ancestor of the
   // trigger element.
   stretchToSelector?: string;
+
+  // If set to true, users can move to nothing selected with arrow keys. Otherwise, pressing arrow
+  // down on the last item selects the first one, and pressing the arrow up on the first item
+  // selects the last one.
+  allowNothingSelected?: boolean;
 }
 
 export interface ISubMenuOptions {
@@ -142,6 +147,8 @@ export class BaseMenu extends Disposable implements IPopupContent {
   // Modified by extending classes to prevent trigger element from losing focus.
   private _focusOnSelected: boolean = true;
 
+  private _allowNothingSelected: boolean;
+
   constructor(private ctl: IOpenController, items: DomElementArg[], options: IMenuOptions = {}) {
     super();
     const stretchContainer: Element|null = options.stretchToSelector ?
@@ -154,6 +161,8 @@ export class BaseMenu extends Disposable implements IPopupContent {
         ctl.setOpenClass(parent);
       }
     }
+
+    this._allowNothingSelected = Boolean(options.allowNothingSelected);
 
     this.content = cssMenuWrap(
       this._menuContent = cssMenu({class: options.menuCssClass || ''},
@@ -190,14 +199,24 @@ export class BaseMenu extends Disposable implements IPopupContent {
 
   protected nextIndex(): void {
     const next = getNextSelectable(this._selected,
-      (elem) => (elem && elem.nextElementSibling) || this._menuContent.firstElementChild);
-    if (next) { this.setSelected(next); }
+      (elem) => {
+        if (!elem) { return this._menuContent.firstElementChild; }
+        return elem.nextElementSibling || (
+          this._allowNothingSelected ? null : this._menuContent.firstElementChild
+        );
+      });
+    this.setSelected(next);
   }
 
   protected prevIndex(): void {
     const next = getNextSelectable(this._selected,
-      (elem) => (elem && elem.previousElementSibling) || this._menuContent.lastElementChild);
-    if (next) { this.setSelected(next); }
+      (elem) => {
+        if (!elem) { return this._menuContent.lastElementChild; }
+        return elem.previousElementSibling || (
+          this._allowNothingSelected ? null : this._menuContent.lastElementChild
+        );
+      });
+    this.setSelected(next);
   }
 
   // When the selected element changes, update the classes of the formerly and newly-selected

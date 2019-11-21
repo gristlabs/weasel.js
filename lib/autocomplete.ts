@@ -4,18 +4,23 @@ import {IOpenController, IPopupContent, PopupControl, setPopupToFunc} from './po
 
 /**
  * IAutocomplete options adds two properties IMenuOptions to customize autocomplete behavior:
- *
- * contentFunc: Overrides the passed-in optionArray to allow creating menu rows
- *   with special behavior when selected.
- *
- * findMatch: Overrides default case-insensitive row select behavior.
  */
 export interface IAutocompleteOptions extends IMenuOptions {
-  contentFunc?: (ctl: IOpenController) => DomElementArg[];
+
+  // Overrides default case-insensitive row select behavior.
   findMatch?: (content: HTMLElement[], value: string) => HTMLElement|null;
+
+  // If true, the value is updated when a choice is selected (ie: by mouse over or arrow
+  // navigation).
+  updateOnSelect?: boolean;
+
+  // A callback triggered when user clicks one of the choices.
+  onClick?: (choice: string) => void;
+
 }
 
 const defaultFindMatch = (content: HTMLElement[], val: string) => {
+  if (!val) { return null; } // Empty string match nothing
   val = val.toLowerCase();
   return content.find((el: any) => el.textContent.toLowerCase().startsWith(val)) || null;
 };
@@ -28,24 +33,11 @@ const defaultFindMatch = (content: HTMLElement[], val: string) => {
  *      const inputElem = input(...);
  *      autocomplete(inputElem, employees);
  */
-export function autocomplete<T>(
+export function autocomplete(
   inputElem: HTMLInputElement,
-  optionArray: MaybeObsArray<string>,
+  choices: MaybeObsArray<string>,
   options: IAutocompleteOptions = {}
 ): HTMLInputElement {
-  // Add default values for contentFunc and findMatch.
-  options = {
-    // Default contentFunc uses the optionArray and sets the input to the text option on select.
-    contentFunc: (ctl: IOpenController) => [
-      dom.forEach(optionArray, (opt) =>
-        menuItem(() => { inputElem.value = opt; }, opt,
-          // Prevent input from being blurred on menuItem click.
-          dom.on('mousedown', (ev) => { ev.preventDefault(); })
-        )
-      )
-    ],
-    ...options
-  };
 
   // Options to pass into the Autocomplete class.
   const menuOptions: IAutocompleteOptions = {
@@ -61,9 +53,26 @@ export function autocomplete<T>(
     ...options
   };
 
-  const contentFunc = options.contentFunc!;
+  // Keeps track of the last value as typed by the user.
+  let lastAsTyped = inputElem.value;
+  const lis = dom.onElem(inputElem, 'input', () => lastAsTyped = inputElem.value);
+
+  const contentFunc = () => [
+    dom.autoDispose(lis),
+    dom.forEach(choices, (opt) => (
+      menuItem(
+        () => { inputElem.value = opt; if (options.onClick) { options.onClick(opt); }},
+        opt,
+        dom.data('choice', opt),
+        options.updateOnSelect ?
+          dom.data('menuItemSelected', () => (yesNo: boolean) => inputElem.value = (yesNo ? opt : lastAsTyped)) :
+          null,
+      )
+    ))
+  ];
+
   setPopupToFunc(inputElem,
-    (ctl) => Autocomplete.create(null, ctl, contentFunc(ctl), menuOptions),
+    (ctl) => Autocomplete.create(null, ctl, contentFunc(), menuOptions),
     menuOptions);
 
   return inputElem;
@@ -90,8 +99,9 @@ class Autocomplete extends BaseMenu implements IPopupContent {
     this.autoDispose(onKeyElem(trigger, 'keydown', {
       ArrowDown: () => this.nextIndex(),
       ArrowUp: () => this.prevIndex(),
-      Enter$: () => this._selected && this._selected.click(),
-      Escape: () => ctl.close(0)
+      // On Enter key we only update the value and let the event propagate for the consumer to
+      // handle it directly.
+      Enter$: () => this._selected && (trigger.value = dom.getData(this._selected, 'choice')),
     }));
 
     this.autoDispose(onElem(trigger, 'input', () => {
@@ -101,6 +111,9 @@ class Autocomplete extends BaseMenu implements IPopupContent {
     if (trigger.value) {
       this._selectRow(trigger.value);
     }
+
+    // Prevent trigger element from being blurred on click.
+    dom.onElem(this._menuContent, 'mousedown', (ev) => ev.preventDefault());
   }
 
   private _selectRow(inputVal: string): void {
