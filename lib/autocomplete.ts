@@ -3,16 +3,12 @@ import {BaseMenu, defaultMenuOptions, IMenuOptions, menuItem} from './menu';
 import {IOpenController, IPopupContent, PopupControl, setPopupToFunc} from './popup';
 
 /**
- * IAutocomplete options adds two properties IMenuOptions to customize autocomplete behavior:
+ * IAutocomplete options adds some properties to IMenuOptions to customize autocomplete behavior:
  */
 export interface IAutocompleteOptions extends IMenuOptions {
 
   // Overrides default case-insensitive row select behavior.
   findMatch?: (content: HTMLElement[], value: string) => HTMLElement|null;
-
-  // If true, the value is updated when a choice is selected (ie: by mouse over or arrow
-  // navigation).
-  updateOnSelect?: boolean;
 
   // A callback triggered when user clicks one of the choices.
   onClick?: (choice: string) => void;
@@ -53,20 +49,11 @@ export function autocomplete(
     ...options
   };
 
-  // Keeps track of the last value as typed by the user.
-  let lastAsTyped = inputElem.value;
-  const lis = dom.onElem(inputElem, 'input', () => lastAsTyped = inputElem.value);
-
   const contentFunc = () => [
-    dom.autoDispose(lis),
     dom.forEach(choices, (opt) => (
       menuItem(
         () => { inputElem.value = opt; if (options.onClick) { options.onClick(opt); }},
         opt,
-        dom.data('choice', opt),
-        options.updateOnSelect ?
-          dom.data('menuItemSelected', () => (yesNo: boolean) => inputElem.value = (yesNo ? opt : lastAsTyped)) :
-          null,
       )
     ))
   ];
@@ -86,6 +73,7 @@ export function autocomplete(
 class Autocomplete extends BaseMenu implements IPopupContent {
   private readonly _rows: HTMLElement[] = Array.from(this._menuContent.children) as HTMLElement[];
   private readonly _findMatch: (content: HTMLElement[], value: string) => HTMLElement|null;
+  private _lastAsTyped: string;
 
   constructor(ctl: IOpenController, items: DomElementArg[], options: IAutocompleteOptions) {
     super(ctl, items, options);
@@ -95,13 +83,24 @@ class Autocomplete extends BaseMenu implements IPopupContent {
 
     const trigger = ctl.getTriggerElem() as HTMLInputElement;
 
+    // Keeps track of the last value as typed by the user.
+    this._lastAsTyped = trigger.value;
+    this.autoDispose(dom.onElem(trigger, 'input', () => { this._lastAsTyped = trigger.value; }));
+
     // Add key handlers to the trigger element as well as the menu if it is an input.
     this.autoDispose(onKeyElem(trigger, 'keydown', {
-      ArrowDown: () => this.nextIndex(),
-      ArrowUp: () => this.prevIndex(),
+      ArrowDown: () => {
+        this.nextIndex();
+        this._updateValue(trigger);
+      },
+      ArrowUp: () => {
+        this.prevIndex();
+        this._updateValue(trigger);
+      },
       // On Enter key we only update the value and let the event propagate for the consumer to
-      // handle it directly.
-      Enter$: () => this._selected && (trigger.value = dom.getData(this._selected, 'choice')),
+      // handle it directly. Note that the items' action do not run on Enter because the focus
+      // remain on the trigger element.
+      Enter$: () => { if (this._selected) { trigger.value = this._selected.textContent!; }},
     }));
 
     this.autoDispose(onElem(trigger, 'input', () => {
@@ -119,5 +118,11 @@ class Autocomplete extends BaseMenu implements IPopupContent {
   private _selectRow(inputVal: string): void {
     const match: HTMLElement|null = this._findMatch(this._rows, inputVal);
     this.setSelected(match);
+  }
+
+  // Update trigger's value with the currently selected choice. Or with the last typed value, if
+  // nothing is selected.
+  private _updateValue(trigger: HTMLInputElement) {
+    trigger.value = this._selected ? this._selected.textContent! : this._lastAsTyped;
   }
 }

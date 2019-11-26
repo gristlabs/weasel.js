@@ -160,9 +160,11 @@ export class PopupControl<T extends IPopupOptions = IPopupOptions> extends Dispo
 
   constructor() {
     super();
+    // Clear timeouts on disposal, which might still be scheduled and cause JS errors in case of
+    // quick open/close/open interactions
     this.onDispose(() => {
-      if (this._openTimer !== undefined) { clearTimeout(this._openTimer); }
-      if (this._closeTimer !== undefined) { clearTimeout(this._closeTimer); }
+      if (this._openTimer) { clearTimeout(this._openTimer); }
+      if (this._closeTimer) { clearTimeout(this._closeTimer); }
     });
   }
 
