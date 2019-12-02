@@ -1,8 +1,10 @@
-import {assert, driver, Key, stackWrapFunc, useServer} from 'mocha-webdriver';
+import {addToRepl, assert, driver, Key, useServer} from 'mocha-webdriver';
 import {server} from '../fixtures/webpack-test-server';
+import {assertOpen} from './utils';
 
 describe('menu', () => {
   useServer(server);
+  addToRepl('Key', Key, 'key values such as Key.ENTER');
 
   before(async function() {
     this.timeout(60000);      // Set a longer default timeout.
@@ -11,12 +13,6 @@ describe('menu', () => {
 
   beforeEach(async function() {
     await driver.find('.test-reset').click();
-  });
-
-  const assertOpen = stackWrapFunc(async function(selector: string, yesNo: boolean) {
-    const elemPromise = driver.find(selector);
-    assert.equal(await elemPromise.isPresent() && await elemPromise.isDisplayed(), yesNo,
-      `Menu ${selector} is not ${yesNo ? 'open' : 'closed'}`);
   });
 
   it('should toggle on trigger click', async function() {
@@ -287,38 +283,30 @@ describe('menu', () => {
     assert.equal(await driver.find('.test-input1').getAttribute('value'), 'helloa');
   });
 
-  it('should have a functional autocomplete', async function() {
-    this.timeout(10000);
+  it('should allow nothing selected with navigating navigation', async function() {
+    await driver.find('.test-btn5').click();
+    assert.deepEqual(await findSelected(), []);
 
-    // Check that the autocomplete opens when the input is focused.
-    const input = await driver.find('.test-autocomplete1');
-    await input.click();
-    assert.equal(await driver.findContent('li', /Thomas/).isPresent(), true);
-    assert.equal(await driver.findContent('li[class*=-sel]', /Thomas/).isPresent(), false);
+    // moving down once should select 'Cut'
+    await driver.sendKeys(Key.DOWN);
+    assert.deepEqual(await findSelected(), ['Cut']);
 
-    // Type 't' and check that Thomas is selected.
-    await input.sendKeys('t');
-    assert.equal(await driver.findContent('li[class*=-sel]', /Thomas/).isPresent(), true);
+    // moving up once should select nothing
+    await driver.sendKeys(Key.UP);
+    assert.deepEqual(await findSelected(), []);
 
-    // Hit enter and check that the input is set to 'Thomas'.
-    await input.sendKeys(Key.ENTER);
-    assert.equal(await input.getAttribute('value'), 'Thomas');
+    // moving up once should select 'Paste'
+    await driver.sendKeys(Key.UP);
+    assert.deepEqual(await findSelected(), ['Paste Special\n▶']);
 
-    // Reset input focus
-    await driver.find('.test-top').click();
-    input.click();
-    for (let i = 0; i < 6; i++) { await input.sendKeys(Key.BACK_SPACE); }
+    // moving down once should select nothing
+    await driver.sendKeys(Key.DOWN);
+    assert.deepEqual(await findSelected(), []);
 
-    // Type 'mar' and check that Mark is selected.
-    await input.sendKeys('mar');
-    assert.equal(await driver.findContent('li[class*=-sel]', /Mark/).isPresent(), true);
+    function findSelected() {
+      return driver.findAll('li[class*=-sel]', (e) => e.getText());
+    }
 
-    // Type 'j' and check that Marjorey is selected.
-    await input.sendKeys('j');
-    assert.equal(await driver.findContent('li[class*=-sel]', /Marjorey/).isPresent(), true);
-
-    // Use down arrow 3x and check that June is selected.
-    for (let i = 0; i < 3; i++) { await input.sendKeys(Key.DOWN); }
-    assert.equal(await driver.findContent('li[class*=-sel]', /June/).isPresent(), true);
   });
+
 });

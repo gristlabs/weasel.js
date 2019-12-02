@@ -97,10 +97,16 @@ class Autocomplete extends BaseMenu implements IPopupContent {
         this.prevIndex();
         this._updateValue(trigger);
       },
-      // On Enter key we only update the value and let the event propagate for the consumer to
-      // handle it directly. Note that the items' action do not run on Enter because the focus
-      // remain on the trigger element.
-      Enter$: () => { if (this._selected) { trigger.value = this._selected.textContent!; }},
+      // On Enter key, if an item is selected we update the value and close the dropdown. We always
+      // let event propagate (notice the '$' at the end of 'Enter$') because it is often desirable
+      // to listen to the enter key on an input element. Note that the items' action do not run on
+      // Enter because the focus remain on the trigger element.
+      Enter$: (ev) => {
+        if (this._selected) {
+          trigger.value = this._selected.textContent!;
+          ctl.close();
+        }
+      },
     }));
 
     this.autoDispose(onElem(trigger, 'input', () => {

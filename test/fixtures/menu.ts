@@ -53,6 +53,11 @@ function setupTest() {
       })
     ),
     cssButton('My Funky Menu', menu(makeFunkyMenu, funkyOptions)),
+    cssButton('My Menu that allow nothing selected',
+      {tabindex: '-1'},
+      testId('btn5'),
+      menu(makeMenu, {allowNothingSelected: true}),
+    ),
     makeSelect(),
     makeComplexSelect(),
     cssInputContainer(
@@ -195,7 +200,7 @@ function makeAutocomplete(): HTMLInputElement {
   const inputElem = input(inputVal, {onInput: true}, {style: 'width: 200px;'},
     testId('autocomplete1')
   );
-  return autocomplete(inputElem, employees);
+  return autocomplete(inputElem, employees, {menuCssClass: 'test-menu-autocomplete1'});
 }
 
 function makeComplexAutocomplete(): HTMLInputElement {
@@ -205,11 +210,7 @@ function makeComplexAutocomplete(): HTMLInputElement {
   const inputElem = input(inputVal, {onInput: true}, {style: 'width: 200px;'},
     testId('autocomplete2')
   );
-  return autocomplete(inputElem, [], {
-    // Make selection add Smith to the end
-    contentFunc: (ctl: IOpenController) => [
-      dom.forEach(employees, (opt) => menuItem(() => { inputElem.value = opt + ' Smith'; }, opt))
-    ],
+  return autocomplete(inputElem, employees, {
     // Make matching case-sensistive
     findMatch: (content: HTMLElement[], val: string) => {
       return content.find((el: any) => el.textContent.startsWith(val)) || null;
