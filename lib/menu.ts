@@ -99,7 +99,7 @@ function baseElem(createFn: MenuClassCons, triggerElem: Element, createFunc: Men
  *    --weaseljs-selected-color
  *    --weaseljs-menu-item-padding
  */
-export function menuItem(action: (item: Element) => void, ...args: DomElementArg[]): Element {
+export function menuItem(action: (item: HTMLElement) => void, ...args: DomElementArg[]): Element {
   return cssMenuItem(
     ...args,
     dom.on('click', (ev, elem) => elem.classList.contains('disabled') || action(elem)),

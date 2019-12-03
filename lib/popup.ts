@@ -148,7 +148,12 @@ export function setPopupToCreateDom(triggerElem: Element, domCreator: IPopupDomC
 }
 
 /**
- * Open a popup using as content the element returned by the given func.
+ * Open a popup using as content the element returned by the given func. Note that the `trigger`
+ * option is ignored by this function and that the default of the `attach` option is `body` instead of `null`.
+ *
+ * It allows you to bind the creation of the popup to a menu item as follow:
+ *   menuItem(elem => popupOpen(elem, (ctl) => buildDom(ctl)))
+ *
  */
 export function popupOpen(reference: Element, domCreator: IPopupDomCreator, options: IPopupOptions): PopupControl {
   function openFunc(openCtl: IOpenController) {
@@ -157,6 +162,13 @@ export function popupOpen(reference: Element, domCreator: IPopupDomCreator, opti
     return {content, dispose};
   }
   const ctl = PopupControl.create(null) as PopupControl;
+
+  // Set the default for the attach option to `body`. Because otherwise the default 'null' would
+  // causes the popup to be attached to reference.parentNode. This does make little sense when used
+  // as follow `menuItem((elem) => popupOpen(elem, ...` because it would close the popup just after
+  // the click.
+  options = defaultsDeep(options, {attach: 'body'});
+
   ctl.attachElem(reference, openFunc, {
     ...options,
     // Overrides '.trigger' to avoid attaching listeners to reference.
@@ -195,6 +207,10 @@ export class PopupControl<T extends IPopupOptions = IPopupOptions> extends Dispo
   public attachElem(triggerElem: Element, openFunc: IPopupFunc<T>, options: T): void {
     this._showDelay = options.showDelay || 0;
     this._hideDelay = options.hideDelay || 0;
+
+    // Set default for the `boundaries` option to `viewport` to match the description of
+    // IPopupOptions.attach.
+    options = defaultsDeep(options, { boundaries: 'viewport' });
 
     this._open = (openOptions: IPopupOptions) => {
       this._openTimer = undefined;

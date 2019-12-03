@@ -309,4 +309,28 @@ describe('menu', () => {
 
   });
 
+  it('should support opening a popup', async function() {
+
+    // open the first menu
+    await driver.find('.test-btn1').click();
+
+    // check that menu is open and popup is not
+    await assertOpen('.test-popup', false);
+    await assertOpen('.test-menu1', true);
+
+    // trigger the opening of the popup
+    await driver.find('.test-popup-open').click();
+
+    // check that menu is now closed and popup is opened
+    await assertOpen('.test-popup', true);
+    await assertOpen('.test-menu1', false);
+
+    // close the popup
+    await driver.find('.test-popup-close').click();
+
+    // check that both the menu and the popup are closed
+    await assertOpen('.test-popup', false);
+    await assertOpen('.test-menu1', false);
+  });
+
 });

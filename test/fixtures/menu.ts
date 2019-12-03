@@ -3,7 +3,7 @@
  */
 // tslint:disable:no-console
 import {dom, DomElementArg, input, makeTestId, obsArray, observable, styled, TestId} from 'grainjs';
-import {cssMenuDivider, menu, menuItem, menuItemLink, menuItemSubmenu} from '../../index';
+import {cssMenuDivider, menu, menuItem, menuItemLink, menuItemSubmenu, popupOpen} from '../../index';
 import {IOpenController, PopupControl} from '../../index';
 import {autocomplete, inputMenu, select} from '../../index';
 
@@ -114,6 +114,10 @@ function makeMenu(ctl: IOpenController): DomElementArg[] {
       lastAction.set("Show/Hide Cut");
     }, dom.text((use) => use(hideCut) ? "Show Cut" : "Hide Cut")),
     menuItem(() => resetBtn.focus(), 'Focus Reset', testId('focus-reset')),
+    menuItem((elem) => popupOpen(elem, buildPopupContent, {
+      placement: 'right',
+    }), "popup", testId('popup-open')
+    ),
     cssMenuDivider(),
     menuItemSubmenu(makePasteSubmenu, {}, "Paste Special", testId('sub-item')),
   ];
@@ -218,6 +222,17 @@ function makeComplexAutocomplete(): HTMLInputElement {
   });
 }
 
+function buildPopupContent(ctl: IOpenController): HTMLElement {
+  return cssPopupContent(
+    "Hello World",
+    cssButton(
+      'Ok', dom.on('click', () => ctl.close()),
+      testId('popup-close')
+    ),
+    testId('popup')
+  );
+}
+
 const cssExample = styled('div', `
   position: relative;
   overflow: auto;
@@ -228,7 +243,6 @@ const cssExample = styled('div', `
   font-size: 100%;
   font-family: sans-serif;
   vertical-align: baseline;
-  height: 400px;
   width: 500px;
   padding: 16px;
 
@@ -312,6 +326,10 @@ const cssInputMenu = styled('div', `
 const funkyOptions = {
   menuCssClass: cssFunkyMenu.className,
 };
+
+const cssPopupContent = styled('div', `
+  background-color: darkCyan;
+`);
 
 document.addEventListener('DOMContentLoaded', () => {
   document.body.appendChild(setupTest());
