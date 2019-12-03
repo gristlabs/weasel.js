@@ -71,6 +71,11 @@ export interface IOpenController extends Disposable {
    */
   getTriggerElem(): Element;
 
+  /**
+   * Schedules an UI update for the popup's position.
+   */
+  update(): void;
+
   // Note that .autoDispose() and .onDispose() methods from grainjs Disposable are available,
   // and triggered when the popup is closed.
 }
@@ -140,6 +145,25 @@ export function setPopupToCreateDom(triggerElem: Element, domCreator: IPopupDomC
     return {content, dispose};
   }
   return setPopupToFunc(triggerElem, openFunc, options);
+}
+
+/**
+ * Open a popup using as content the element returned by the given func.
+ */
+export function popupOpen(reference: Element, domCreator: IPopupDomCreator, options: IPopupOptions): PopupControl {
+  function openFunc(openCtl: IOpenController) {
+    const content = domCreator(openCtl);
+    function dispose() { domDispose(content); ctl.dispose(); }
+    return {content, dispose};
+  }
+  const ctl = PopupControl.create(null) as PopupControl;
+  ctl.attachElem(reference, openFunc, {
+    ...options,
+    // Overrides '.trigger' to avoid attaching listeners to reference.
+    trigger: undefined
+  });
+  ctl.open();
+  return ctl;
 }
 
 // Helper type for maintaining setTimeout() timers.
