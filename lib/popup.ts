@@ -27,9 +27,9 @@ export interface IPopupOptions {
   // default; string is a selector for the closest matching ancestor of triggerElem, e.g. 'body'.
   attach?: Element|string|null;
 
-  // Boundaries for the placement of the popup. The default is 'viewport'. This determines the
-  // values of modifiers.flip.boundariesElement and modifiers.preventOverflow.boundariesElement.
-  // Use null to use the defaults from popper.js. These may be set individually via modifiers.
+  // Boundaries for the placement of the popup. This determines the values of
+  // modifiers.flip.boundariesElement and modifiers.preventOverflow.boundariesElement. Use null to
+  // use the defaults from popper.js. These may be set individually via modifiers.
   boundaries?: Element|'scrollParent'|'window'|'viewport'|null;
 
   // On what events, the popup is triggered.
@@ -163,11 +163,20 @@ export function popupOpen(reference: Element, domCreator: IPopupDomCreator, opti
   }
   const ctl = PopupControl.create(null) as PopupControl;
 
-  // Set the default for the attach option to `body`. Because otherwise the default 'null' would
-  // causes the popup to be attached to reference.parentNode. This does make little sense when used
-  // as follow `menuItem((elem) => popupOpen(elem, ...` because it would close the popup just after
-  // the click.
-  options = defaultsDeep(options, {attach: 'body'});
+  options = defaultsDeep(options, {
+
+    // Set the default for the attach option to `body`. Because otherwise the default 'null' would
+    // causes the popup to be attached to reference.parentNode. This does make little sense when used
+    // as follow `menuItem((elem) => popupOpen(elem, ...` because it would close the popup just after
+    // the click.
+    attach: 'body',
+
+    // When using within a menu item, the Popper's default options for
+    // modifiers.flip.boundariesElement and modifiers.preventOverflow.boundariesElement causes the
+    // popup to gets disposed right after the click. Setting boundaries to 'viewport' prevent that
+    // issue.
+    boundaries: 'viewport',
+  });
 
   ctl.attachElem(reference, openFunc, {
     ...options,
@@ -207,10 +216,6 @@ export class PopupControl<T extends IPopupOptions = IPopupOptions> extends Dispo
   public attachElem(triggerElem: Element, openFunc: IPopupFunc<T>, options: T): void {
     this._showDelay = options.showDelay || 0;
     this._hideDelay = options.hideDelay || 0;
-
-    // Set default for the `boundaries` option to `viewport` to match the description of
-    // IPopupOptions.attach.
-    options = defaultsDeep(options, { boundaries: 'viewport' });
 
     this._open = (openOptions: IPopupOptions) => {
       this._openTimer = undefined;
