@@ -171,10 +171,9 @@ export function popupOpen(reference: Element, domCreator: IPopupDomCreator, opti
     // the click.
     attach: 'body',
 
-    // When using within a menu item, the Popper's default options for
-    // modifiers.flip.boundariesElement and modifiers.preventOverflow.boundariesElement causes the
-    // popup to gets disposed right after the click. Setting boundaries to 'viewport' prevent that
-    // issue.
+    // The Popper's default of 'scrollParent' for modifiers.preventOverflow.boundariesElement causes
+    // the popup to be placed incorrectly when the reference element gets disposed after the
+    // click. Setting boundaries to 'viewport' solves that issue
     boundaries: 'viewport',
   });
 
