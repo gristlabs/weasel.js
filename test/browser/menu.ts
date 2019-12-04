@@ -303,6 +303,11 @@ describe('menu', () => {
     await driver.sendKeys(Key.DOWN);
     assert.deepEqual(await findSelected(), []);
 
+    // Close the menu.
+    await assertOpen('.test-menu1', true);
+    await driver.sendKeys(Key.ESCAPE);
+    await assertOpen('.test-menu1', false);
+
     function findSelected() {
       return driver.findAll('li[class*=-sel]', (e) => e.getText());
     }
