@@ -163,7 +163,7 @@ export function popupOpen(reference: Element, domCreator: IPopupDomCreator, opti
   }
   const ctl = PopupControl.create(null) as PopupControl;
 
-  options = defaultsDeep(options, {
+  ctl.attachElem(reference, openFunc, {
 
     // Set the default for the attach option to `body`. Because otherwise the default 'null' would
     // causes the popup to be attached to reference.parentNode. This does make little sense when used
@@ -175,10 +175,9 @@ export function popupOpen(reference: Element, domCreator: IPopupDomCreator, opti
     // the popup to be placed incorrectly when the reference element gets disposed after the
     // click. Setting boundaries to 'viewport' solves that issue
     boundaries: 'viewport',
-  });
 
-  ctl.attachElem(reference, openFunc, {
     ...options,
+
     // Overrides '.trigger' to avoid attaching listeners to reference.
     trigger: undefined
   });
