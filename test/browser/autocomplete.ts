@@ -1,8 +1,8 @@
-import { assert, driver, useServer, Key, addToRepl } from 'mocha-webdriver';
+import { addToRepl, assert, driver, Key, useServer } from 'mocha-webdriver';
 import { server } from '../fixtures/webpack-test-server';
 import { assertOpen } from './utils';
 
-describe('popper', () => {
+describe('autocomplete', () => {
   useServer(server);
   addToRepl('Key', Key, 'key values such as Key.ENTER');
 
