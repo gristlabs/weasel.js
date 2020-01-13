@@ -98,9 +98,9 @@ class Autocomplete extends BaseMenu implements IPopupContent {
         this._updateValue(trigger);
       },
       // On Enter (and Tab) key, we update the trigger's value and close the dropdown. We always let
-      // event propagate (notice the '$' at the end of 'Enter$') because it is often desirable to
-      // listen to eigher one of Enter (or Tab) key on an input element. Note that the menu items'
-      // action does not run on Enter because the focus remains on the trigger element at all time.
+      // event propagate (notice the '$' at the end of 'Enter$') because the user may want to handle
+      // these events independently as well. Note that the menu items' action does not run on Enter
+      // because the focus remains on the trigger element at all time.
       Enter$: (ev) => {
         this._updateValue(trigger);
         ctl.close();
@@ -108,7 +108,8 @@ class Autocomplete extends BaseMenu implements IPopupContent {
       Tab$: (ev) => {
         this._updateValue(trigger);
         ctl.close();
-      }
+      },
+      Escape$: () => ctl.close(),
     }));
 
     this.autoDispose(onElem(trigger, 'input', () => {
