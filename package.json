@@ -26,8 +26,10 @@
     "url": "https://github.com/gristlabs/weasel.js/issues"
   },
   "homepage": "https://github.com/gristlabs/weasel.js#readme",
+  "peerDependencies": {
+    "grainjs": "^1.0.1"
+  },
   "dependencies": {
-    "grainjs": "^1.0.1",
     "lodash": "^4.17.15",
     "popper.js": "1.15.0"
   },
@@ -41,6 +43,7 @@
     "@types/webpack-dev-server": "^3.1.5",
     "cache-loader": "^3.0.0",
     "fork-ts-checker-webpack-plugin": "^1.2.0",
+    "grainjs": "^1.0.1",
     "mocha": "6.1.4",
     "mocha-webdriver": "^0.2.0",
     "ts-loader": "^5.4.4",

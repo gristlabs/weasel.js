@@ -1,7 +1,7 @@
 import {dom, DomArg, DomElementArg, onElem, styled} from 'grainjs';
 import {BindableValue, Computed, MaybeObsArray, Observable} from 'grainjs';
 import {BaseMenu, defaultMenuOptions, IMenuOptions, menuItem} from './menu';
-import {IOpenController, PopupControl, setPopupToFunc} from './popup';
+import {IOpenController, IPopupOptions, PopupControl, setPopupToFunc} from './popup';
 
 export interface IOptionFull<T> {
   value: T;
@@ -22,6 +22,7 @@ export interface ISelectUserOptions {
   buttonCssClass?: string  // If provided, applies the css class to the select button.
   // If disabled, adds the .disabled class to the select button and prevents opening.
   disabled?: BindableValue<boolean>;
+  attach?: IPopupOptions['attach'];
 }
 
 export interface ISelectOptions extends IMenuOptions {
@@ -86,6 +87,7 @@ export function select<T>(
   const selectOptions: ISelectOptions = {
     ...defaultMenuOptions,
     menuCssClass: options.menuCssClass,
+    attach: options.attach === undefined ? defaultMenuOptions.attach : options.attach,
     trigger: [(triggerElem: Element, ctl: PopupControl) => {
       dom.onElem(triggerElem, 'click', () => isDisabled() || ctl.toggle()),
       dom.onKeyElem(triggerElem as HTMLElement, 'keydown', {
