@@ -7,3 +7,19 @@ export const assertOpen = stackWrapFunc(async function(selector: string, yesNo: 
   assert.equal(await elemPromise.isPresent() && await elemPromise.isDisplayed(), yesNo,
                `Menu ${selector} is not ${yesNo ? 'open' : 'closed'}`);
 });
+
+// Rerun check until it pass or `timeMs` elapsed.
+export async function waitToPass(check: () => Promise<void>, timeMs: number = 4000) {
+  try {
+    await driver.wait(async () => {
+      try {
+        await check();
+      } catch (e) {
+        return false;
+      }
+      return true;
+    }, timeMs);
+  } catch (e) {
+    await check();
+  }
+}

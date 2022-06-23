@@ -1,5 +1,6 @@
 import {assert, driver, Key, useServer, WebElement} from 'mocha-webdriver';
 import {server} from '../fixtures/webpack-test-server';
+import {waitToPass} from './utils';
 
 describe('sampleTest', () => {
   useServer(server);
@@ -16,8 +17,10 @@ describe('sampleTest', () => {
   it('should respond to changing obsArray', async function() {
     assert.deepEqual(await getText(driver.findAll('#out1 li')), []);
 
-    await driver.find('#in1 input').sendKeys("foo", Key.ENTER);
-    assert.deepEqual(await getText(driver.findAll('#out1 li')), ["+foo"]);
+    await waitToPass(async () => {
+      await driver.find('#in1 input').sendKeys("foo", Key.ENTER);
+      assert.deepEqual(await getText(driver.findAll('#out1 li')), ["+foo"]);
+    });
 
     await driver.find('#in1 input').sendKeys(",bar,baz", Key.ENTER);
     assert.deepEqual(await getText(driver.findAll('#out1 li')), ["+foo", "+bar", "+baz"]);
