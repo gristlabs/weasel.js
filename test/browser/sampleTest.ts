@@ -17,6 +17,9 @@ describe('sampleTest', () => {
   it('should respond to changing obsArray', async function() {
     assert.deepEqual(await getText(driver.findAll('#out1 li')), []);
 
+    // adding waitToPass is a hack because the test fails for some mysterious reason (it fails alway
+    // when running all test, but never fails when running this test alone) but it doesn't matter
+    // here so OK to sweep under the rug.
     await waitToPass(async () => {
       await driver.find('#in1 input').sendKeys("foo", Key.ENTER);
       assert.deepEqual(await getText(driver.findAll('#out1 li')), ["+foo"]);
