@@ -389,9 +389,9 @@ export function menuItemSubmenu(
     isSubMenu: true,
     ...options
   };
-
   return cssMenuItem(...args,
-    dom('div', '\u25B6'),     // A right-pointing triangle
+    //uFE0E forcing the character to be rendered as text, not emoji
+    dom('div', '\u25B6\uFE0E'),     // A right-pointing triangle
 
     dom.autoDispose(ctl),
 
