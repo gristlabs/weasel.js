@@ -2,7 +2,16 @@
  * This tests our tooltip implementation.
  */
 // tslint:disable:no-console
-import {dom, DomElementArg, input, makeTestId, obsArray, observable, styled, TestId} from 'grainjs';
+import {
+  dom,
+  DomElementArg,
+  input,
+  makeTestId,
+  obsArray,
+  observable,
+  styled,
+  TestId
+} from 'grainjs';
 import {cssMenuDivider, menu, menuItem, menuItemLink, menuItemSubmenu, popupOpen} from '../../index';
 import {IOpenController, PopupControl} from '../../index';
 import {autocomplete, inputMenu, select} from '../../index';
@@ -133,6 +142,7 @@ function makePasteSubmenu(): DomElementArg[] {
     menuItem(() => lastAction.set('Copy2'), "Copy2", testId('copy2')),
     menuItem(() => lastAction.set('Paste2'), "Paste2", testId('paste2')),
     menuItemSubmenu(makePasteSubmenu, {}, "Paste Special2", testId('sub-item2')),
+    menuItemSubmenu(makePasteSubmenu, {}, "Paste Special2 with really long text", testId('sub-item2')),
   ];
 }
 

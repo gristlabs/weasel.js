@@ -447,6 +447,7 @@ export const cssMenuItem = styled('li', `
   justify-content: space-between;
   outline: none;
   padding: var(--weaseljs-menu-item-padding, 8px 24px);
+  gap:0px 20px;
 
   &-sel {
     cursor: pointer;
