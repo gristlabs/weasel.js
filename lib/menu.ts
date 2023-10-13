@@ -392,7 +392,7 @@ export function menuItemSubmenu(
     ...options
   };
   return cssMenuItem(...args,
-    options.expandIcon || cssExpandIcon(),
+    options.expandIcon ? options.expandIcon() : cssExpandIcon(),
     dom.autoDispose(ctl),
 
     // Set the submenu to be attached as a child of this element rather than as a sibling.
@@ -489,26 +489,17 @@ export const cssMenuDivider = styled('div', `
   background-color: #D9D9D9;
 `);
 
-export const cssExpandIcon = styled('div', `
+export const cssExpandIcon = styled('div.weasel-popup-expand-icon', `
   flex: none;
   margin-right: -20px;
   display: inline-block;
-  vertical-align: middle;
-  -webkit-mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  -webkit-mask-size: contain;
   width: 16px;
   height: 16px;
-  background-color: black;
-  -webkit-mask-image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTgsOS4xNzQ2MzA1MiBMMTAuOTIxODI3Myw2LjE4OTAyMzIgQzExLjE2ODQ3NDIsNS45MzY5OTIyNyAxMS41NjgzNjc5LDUuOTM2OTkyMjcgMTEuODE1MDE0OCw2LjE4OTAyMzIgQzEyLjA2MTY2MTcsNi40NDEwNTQxMyAxMi4wNjE2NjE3LDYuODQ5Njc3MDEgMTEuODE1MDE0OCw3LjEwMTcwNzk0IEw4LDExIEw0LjE4NDk4NTE5LDcuMTAxNzA3OTQgQzMuOTM4MzM4MjcsNi44NDk2NzcwMSAzLjkzODMzODI3LDYuNDQxMDU0MTMgNC4xODQ5ODUxOSw2LjE4OTAyMzIgQzQuNDMxNjMyMTEsNS45MzY5OTIyNyA0LjgzMTUyNTc4LDUuOTM2OTkyMjcgNS4wNzgxNzI3LDYuMTg5MDIzMiBMOCw5LjE3NDYzMDUyIFoiIGZpbGw9IiMwMDAiIGZpbGwtcnVsZT0ibm9uemVybyIgdHJhbnNmb3JtPSJyb3RhdGUoLTkwIDggOC41KSIvPjwvc3ZnPg==);
-
-  .${cssMenuItem.className}-sel & {
-    background-color: white;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    & {
-      background-color: white;
-    }
+  &:after {
+    content: '\u25B6\uFE0E';
+    display: inline-block;
+    text-align: center;
+    width: 16px;
+    height: 16px;
   }
 `);
