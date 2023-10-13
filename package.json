@@ -1,6 +1,6 @@
 {
   "name": "popweasel",
-  "version": "0.1.19",
+  "version": "0.1.20",
   "description": "Collection of UI elements that behave as popovers",
   "main": "dist/index",
   "types": "dist/index",
