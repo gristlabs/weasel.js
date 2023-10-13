@@ -495,11 +495,13 @@ export const cssExpandIcon = styled('div.weasel-popup-expand-icon', `
   display: inline-block;
   width: 16px;
   height: 16px;
+  margin-top: -2px;
   &:after {
     content: '\u25B6\uFE0E';
     display: inline-block;
     text-align: center;
     width: 16px;
     height: 16px;
+    font-size: 8px;
   }
 `);
