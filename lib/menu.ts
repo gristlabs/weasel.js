@@ -46,6 +46,8 @@ export interface IMenuOptions extends IPopupOptions {
 
 export interface ISubMenuOptions {
   menuCssClass?: string;    // If provided, applies the css class to the menu container.
+  expandIcon?:  () => DomElementArg; // Overrides the default expand icon.
+  action?: (item: HTMLElement) => void; // If provided, called when the item is clicked.
 }
 
 /**
@@ -390,9 +392,7 @@ export function menuItemSubmenu(
     ...options
   };
   return cssMenuItem(...args,
-    //uFE0E forcing the character to be rendered as text, not emoji
-    dom('div', '\u25B6\uFE0E'),     // A right-pointing triangle
-
+    options.expandIcon || cssExpandIcon(),
     dom.autoDispose(ctl),
 
     // Set the submenu to be attached as a child of this element rather than as a sibling.
@@ -412,7 +412,13 @@ export function menuItemSubmenu(
       (yesNo: boolean) => yesNo || ctl.close()),
 
     // Clicks that open a submenu should not cause parent menu to close.
-    dom.on('click', (ev) => { ev.stopPropagation(); }),
+    dom.on('click', (ev, elem) => {
+      if (options.action && !elem.classList.contains('disabled')) {
+        options.action(ev.target as HTMLElement);
+      } else {
+        ev.stopPropagation();
+      }
+    }),
   );
 }
 
@@ -447,7 +453,6 @@ export const cssMenuItem = styled('li', `
   justify-content: space-between;
   outline: none;
   padding: var(--weaseljs-menu-item-padding, 8px 24px);
-  gap:0px 20px;
 
   &-sel {
     cursor: pointer;
@@ -482,4 +487,28 @@ export const cssMenuDivider = styled('div', `
   width: 100%;
   margin: 4px 0;
   background-color: #D9D9D9;
+`);
+
+export const cssExpandIcon = styled('div', `
+  flex: none;
+  margin-right: -20px;
+  display: inline-block;
+  vertical-align: middle;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  width: 16px;
+  height: 16px;
+  background-color: black;
+  -webkit-mask-image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTgsOS4xNzQ2MzA1MiBMMTAuOTIxODI3Myw2LjE4OTAyMzIgQzExLjE2ODQ3NDIsNS45MzY5OTIyNyAxMS41NjgzNjc5LDUuOTM2OTkyMjcgMTEuODE1MDE0OCw2LjE4OTAyMzIgQzEyLjA2MTY2MTcsNi40NDEwNTQxMyAxMi4wNjE2NjE3LDYuODQ5Njc3MDEgMTEuODE1MDE0OCw3LjEwMTcwNzk0IEw4LDExIEw0LjE4NDk4NTE5LDcuMTAxNzA3OTQgQzMuOTM4MzM4MjcsNi44NDk2NzcwMSAzLjkzODMzODI3LDYuNDQxMDU0MTMgNC4xODQ5ODUxOSw2LjE4OTAyMzIgQzQuNDMxNjMyMTEsNS45MzY5OTIyNyA0LjgzMTUyNTc4LDUuOTM2OTkyMjcgNS4wNzgxNzI3LDYuMTg5MDIzMiBMOCw5LjE3NDYzMDUyIFoiIGZpbGw9IiMwMDAiIGZpbGwtcnVsZT0ibm9uemVybyIgdHJhbnNmb3JtPSJyb3RhdGUoLTkwIDggOC41KSIvPjwvc3ZnPg==);
+
+  .${cssMenuItem.className}-sel & {
+    background-color: white;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    & {
+      background-color: white;
+    }
+  }
 `);

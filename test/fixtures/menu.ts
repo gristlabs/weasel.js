@@ -2,16 +2,7 @@
  * This tests our tooltip implementation.
  */
 // tslint:disable:no-console
-import {
-  dom,
-  DomElementArg,
-  input,
-  makeTestId,
-  obsArray,
-  observable,
-  styled,
-  TestId
-} from 'grainjs';
+import {dom, DomElementArg, input, makeTestId, obsArray, observable, styled, TestId} from 'grainjs';
 import {cssMenuDivider, menu, menuItem, menuItemLink, menuItemSubmenu, popupOpen} from '../../index';
 import {IOpenController, PopupControl} from '../../index';
 import {autocomplete, inputMenu, select} from '../../index';
@@ -128,7 +119,10 @@ function makeMenu(ctl: IOpenController): DomElementArg[] {
     }), "popup", testId('popup-open')
     ),
     cssMenuDivider(),
-    menuItemSubmenu(makePasteSubmenu, {}, "Paste Special", testId('sub-item')),
+    menuItemSubmenu(makePasteSubmenu, {
+      expandIcon: () => dom('div', '>>>'),
+      action: () => console.log("Paste Special clicked"),
+    }, "Paste Special", testId('sub-item')),
   ];
 }
 
@@ -344,3 +338,14 @@ const cssPopupContent = styled('div', `
 document.addEventListener('DOMContentLoaded', () => {
   document.body.appendChild(setupTest());
 });
+
+const cssOverride = styled('div', `
+
+  .weasel-popup-expand-icon {
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
+    -webkit-mask-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTgsOS4xNzQ2MzA1MiBMMTAuOTIxODI3Myw2LjE4OTAyMzIgQzExLjE2ODQ3NDIsNS45MzY5OTIyNyAxMS41NjgzNjc5LDUuOTM2OTkyMjcgMTEuODE1MDE0OCw2LjE4OTAyMzIgQzEyLjA2MTY2MTcsNi40NDEwNTQxMyAxMi4wNjE2NjE3LDYuODQ5Njc3MDEgMTEuODE1MDE0OCw3LjEwMTcwNzk0IEw4LDExIEw0LjE4NDk4NTE5LDcuMTAxNzA3OTQgQzMuOTM4MzM4MjcsNi44NDk2NzcwMSAzLjkzODMzODI3LDYuNDQxMDU0MTMgNC4xODQ5ODUxOSw2LjE4OTAyMzIgQzQuNDMxNjMyMTEsNS45MzY5OTIyNyA0LjgzMTUyNTc4LDUuOTM2OTkyMjcgNS4wNzgxNzI3LDYuMTg5MDIzMiBMOCw5LjE3NDYzMDUyIFoiIGZpbGw9IiMwMDAiIGZpbGwtcnVsZT0ibm9uemVybyIgdHJhbnNmb3JtPSJyb3RhdGUoLTkwIDggOC41KSIvPjwvc3ZnPg==');
+  }
+
+`)
