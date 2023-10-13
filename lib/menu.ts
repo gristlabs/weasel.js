@@ -47,7 +47,7 @@ export interface IMenuOptions extends IPopupOptions {
 export interface ISubMenuOptions {
   menuCssClass?: string;    // If provided, applies the css class to the menu container.
   expandIcon?:  () => DomElementArg; // Overrides the default expand icon.
-  action?: (item: HTMLElement) => void; // If provided, called when the item is clicked.
+  action?: (item: HTMLElement, event: Event) => void; // If provided, called when the item is clicked.
 }
 
 /**
@@ -101,11 +101,11 @@ function baseElem(createFn: MenuClassCons, triggerElem: Element, createFunc: Men
  *    --weaseljs-selected-color
  *    --weaseljs-menu-item-padding
  */
-export function menuItem(action: (item: HTMLElement) => void, ...args: DomElementArg[]): Element {
+export function menuItem(action: (item: HTMLElement, ev: Event) => void, ...args: DomElementArg[]): Element {
   return cssMenuItem(
     ...args,
-    dom.on('click', (ev, elem) => elem.classList.contains('disabled') || action(elem)),
-    onKeyDown({Enter$: (ev, elem) => action(elem)})
+    dom.on('click', (ev, elem) => elem.classList.contains('disabled') || action(elem, ev)),
+    onKeyDown({Enter$: (ev, elem) => action(elem, ev)})
   );
 }
 
@@ -414,7 +414,7 @@ export function menuItemSubmenu(
     // Clicks that open a submenu should not cause parent menu to close.
     dom.on('click', (ev, elem) => {
       if (options.action && !elem.classList.contains('disabled')) {
-        options.action(ev.target as HTMLElement);
+        options.action(elem, ev);
       } else {
         ev.stopPropagation();
       }
