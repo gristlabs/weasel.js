@@ -1,4 +1,4 @@
-import {dom, DomArg, DomElementArg, onElem, styled} from 'grainjs';
+import {dom, DomArg, DomContents, DomElementArg, onElem, styled} from 'grainjs';
 import {BindableValue, Computed, MaybeObsArray, Observable} from 'grainjs';
 import {BaseMenu, defaultMenuOptions, IMenuOptions, menuItem} from './menu';
 import {IOpenController, IPopupOptions, PopupControl, setPopupToFunc} from './popup';
@@ -10,16 +10,16 @@ export interface IOptionFull<T> {
   // Note that additional properties may be used for storing per-row info such as icon names.
   // The additional property is accessible in each row's renderOption callback.
   [addl: string]: any;
-};
+}
 
 // For string options, we can use a string for label and value without wrapping into an object.
 export type IOption<T> = (T & string) | IOptionFull<T>;
 
 export interface ISelectUserOptions {
-  defaultLabel?: string,   // Button label displayed when no value is selected.
-  buttonArrow?: DomArg,    // DOM for what is typically the chevron on the select button.
-  menuCssClass?: string,   // If provided, applies the css class to the menu container.
-  buttonCssClass?: string  // If provided, applies the css class to the select button.
+  defaultLabel?: string;   // Button label displayed when no value is selected.
+  buttonArrow?: DomArg;    // DOM for what is typically the chevron on the select button.
+  menuCssClass?: string;   // If provided, applies the css class to the menu container.
+  buttonCssClass?: string;  // If provided, applies the css class to the select button.
   // If disabled, adds the .disabled class to the select button and prevents opening.
   disabled?: BindableValue<boolean>;
   attach?: IPopupOptions['attach'];
@@ -53,8 +53,8 @@ export function select<T>(
   obs: Observable<T>,
   optionArray: MaybeObsArray<IOption<T>>,
   options: ISelectUserOptions = {},
-  renderOption: (option: IOptionFull<T|null>) => DomArg = (option) => option.label
-): Element {
+  renderOption: ((option: IOptionFull<T|null>) => DomContents) = ((option) => option.label)
+): HTMLElement {
   // Create SelectKeyState to manage user value search inputs.
   const keyState = new SelectKeyState<T>(optionArray);
 
@@ -66,7 +66,7 @@ export function select<T>(
   });
 
   // Select button and associated event/disposal DOM.
-  const selectBtn: Element = cssSelectBtn({tabIndex: '0', class: options.buttonCssClass || ''},
+  const selectBtn: HTMLElement = cssSelectBtn({tabIndex: '0', class: options.buttonCssClass || ''},
     dom.autoDispose(selected),
     options.disabled ? dom.cls('disabled', options.disabled) : null,
     cssBtnText(
@@ -89,11 +89,11 @@ export function select<T>(
     menuCssClass: options.menuCssClass,
     attach: options.attach === undefined ? defaultMenuOptions.attach : options.attach,
     trigger: [(triggerElem: Element, ctl: PopupControl) => {
-      dom.onElem(triggerElem, 'click', () => isDisabled() || ctl.toggle()),
+      dom.onElem(triggerElem, 'click', () => isDisabled() || ctl.toggle());
       dom.onKeyElem(triggerElem as HTMLElement, 'keydown', {
         ArrowDown: () => isDisabled() || ctl.open(),
         ArrowUp: () => isDisabled() || ctl.open()
-      })
+      });
     }],
     selectLabelOnOpen: () => selected.get().label,
     stretchToSelector: `.${cssSelectBtn.className}`
