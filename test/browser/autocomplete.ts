@@ -31,8 +31,8 @@ describe('autocomplete', () => {
 
     // Hit enter and check that the input is set to 'Thomas'.
     await input.sendKeys(Key.ENTER);
-    assert.equal(await input.getAttribute('value'), 'Thomas');
     await assertOpen('.test-menu-autocomplete1', false);
+    assert.equal(await input.getAttribute('value'), 'Thomas');
 
     // Reset input focus
     await driver.find('.test-top').click();

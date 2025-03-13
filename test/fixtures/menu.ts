@@ -144,7 +144,7 @@ function makePasteSubmenu(): DomElementArg[] {
     menuItem(() => lastAction.set('Copy2'), "Copy2", testId('copy2')),
     menuItem(() => lastAction.set('Paste2'), "Paste2", testId('paste2')),
     menuItemSubmenu(makePasteSubmenu, {}, "Paste Special2", testId('sub-item2')),
-    menuItemSubmenu(makePasteSubmenu, {}, "Paste Special2 with really long text", testId('sub-item2')),
+    menuItemSubmenu(makePasteSubmenu, {}, "Paste Special2 with really long text", testId('sub-item2b')),
   ];
 }
 
