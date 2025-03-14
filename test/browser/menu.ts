@@ -71,6 +71,7 @@ describe('menu', () => {
 
   it('should allow navigation and selection with keys', async function() {
     await driver.find('.test-btn1').click();
+    await assertOpen('.test-menu1', true);
     // Check that focus changes as we navigate.
     await driver.sendKeys(Key.DOWN);
     assert.equal(await driver.find('.test-cut').hasFocus(), true);
@@ -94,6 +95,7 @@ describe('menu', () => {
   it('should react to click even if another item is selected', async function() {
     // Use keys to select an item.
     await driver.find('.test-btn1').click();
+    await assertOpen('.test-menu1', true);
     await driver.sendKeys(Key.DOWN);
     await driver.sendKeys(Key.DOWN);
     assert.equal(await driver.find('.test-copy').hasFocus(), true);
@@ -159,6 +161,7 @@ describe('menu', () => {
   it('should respect keys to open/close/navigate submenu', async function() {
     // Select the submenu item with keyboard (last item).
     await driver.find('.test-btn1').click();
+    await assertOpen('.test-menu1', true);
     await driver.sendKeys(Key.UP);
     assert.equal(await driver.find('.test-sub-item').hasFocus(), true);
 
@@ -191,6 +194,8 @@ describe('menu', () => {
     await driver.sendKeys(Key.DOWN);
     assert.equal(await driver.find('.test-copy2').hasFocus(), true);
     await driver.sendKeys(Key.UP, Key.UP);  // Wrap around top.
+    assert.equal(await driver.find('.test-sub-item2b').hasFocus(), true);
+    await driver.sendKeys(Key.UP);
     assert.equal(await driver.find('.test-sub-item2').hasFocus(), true);
     await driver.sendKeys(Key.UP);
     assert.equal(await driver.find('.test-paste2').hasFocus(), true);
@@ -238,6 +243,7 @@ describe('menu', () => {
   it('should not steal focus set by menu actions', async function() {
     // First check that open/close leaves the menu-trigger button focused.
     await driver.find('.test-btn1').click();
+    await assertOpen('.test-menu1', true);
     await driver.sendKeys(Key.ESCAPE);
     await assertOpen('.test-menu1', false);
     assert.equal(await driver.find('.test-btn1').hasFocus(), true);
@@ -245,6 +251,7 @@ describe('menu', () => {
     // Now click the "Focus Reset" menu item which SHOULD focus the Reset button. We are making
     // sure that focus does NOT get restored to the menu-trigger button if an action changed it.
     await driver.find('.test-btn1').click();
+    await assertOpen('.test-menu1', true);
     await driver.find('.test-focus-reset').click();
     await assertOpen('.test-menu1', false);
     assert.equal(await driver.find('.test-btn1').hasFocus(), false);
@@ -273,6 +280,7 @@ describe('menu', () => {
 
     // Check that input triggers allow navigation to menu items.
     await driver.sendKeys('a');
+    await assertOpen('.test-input1-menu', true);
     await driver.sendKeys(Key.DOWN);
     assert.equal(await driver.find('.test-input1-menu-item').hasFocus(), true);
 
@@ -285,6 +293,7 @@ describe('menu', () => {
 
   it('should allow nothing selected with navigating navigation', async function() {
     await driver.find('.test-btn5').click();
+    await assertOpen('.test-menu1', true);
     assert.deepEqual(await findSelected(), []);
 
     // moving down once should select 'Cut'
@@ -297,7 +306,7 @@ describe('menu', () => {
 
     // moving up once should select 'Paste'
     await driver.sendKeys(Key.UP);
-    assert.deepEqual(await findSelected(), ['Paste Special\n▶']);
+    assert.deepEqual(await findSelected(), ['Paste Special\n->']);
 
     // moving down once should select nothing
     await driver.sendKeys(Key.DOWN);

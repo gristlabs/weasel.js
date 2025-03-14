@@ -16,6 +16,7 @@ describe('select', () => {
   it('should open to selected element', async function() {
     // Check that the initial element is selected on open.
     await driver.find('.test-btn3').click();
+    await driver.findWait('.test-select-dropdown', 100);
     const avocado = await driver.findContent('li', /avocado/);
     assert.isTrue(await avocado.matches('[class*=-sel]'));
 
@@ -24,6 +25,7 @@ describe('select', () => {
 
     // Check that the new element is selected on open.
     await driver.find('.test-btn3').click();
+    await driver.findWait('.test-select-dropdown', 100);
     const kiwi = await driver.findContent('li', /kiwi/);
     assert.isTrue(await kiwi.matches('[class*=-sel]'));
     await driver.sendKeys(Key.ESCAPE);
@@ -32,6 +34,7 @@ describe('select', () => {
   it('should allow typing to change selection when open', async function() {
     // Open the menu, type, and check selected.
     await driver.find('.test-btn4').click();
+    await driver.findWait('.test-select-dropdown', 100);
     await driver.sendKeys('e');
     assert.isTrue(await driver.findContent('li', /Eve/).matches('[class*=-sel]'));
     await driver.sleep(1000); // Sleep to clear text input.
@@ -57,6 +60,7 @@ describe('select', () => {
 
     // Open the menu, then close it to gain focus.
     await driver.find('.test-btn3').click();
+    await driver.findWait('.test-select-dropdown', 100);
     await driver.sendKeys(Key.ESCAPE);
 
     // Assert that kiwi is selected.
@@ -90,6 +94,7 @@ describe('select', () => {
 
     // Check that arrow keys open the menu to the selected element.
     await driver.sendKeys(Key.DOWN);
+    await driver.findWait('.test-select-dropdown', 100);
     assert.isTrue(await driver.findContent('li', /apricot/).matches('[class*=-sel]'));
     await driver.sendKeys(Key.ESCAPE);
   });

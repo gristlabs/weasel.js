@@ -144,7 +144,7 @@ function makePasteSubmenu(): DomElementArg[] {
     menuItem(() => lastAction.set('Copy2'), "Copy2", testId('copy2')),
     menuItem(() => lastAction.set('Paste2'), "Paste2", testId('paste2')),
     menuItemSubmenu(makePasteSubmenu, {}, "Paste Special2", testId('sub-item2')),
-    menuItemSubmenu(makePasteSubmenu, {}, "Paste Special2 with really long text", testId('sub-item2')),
+    menuItemSubmenu(makePasteSubmenu, {}, "Paste Special2 with really long text", testId('sub-item2b')),
   ];
 }
 
@@ -180,8 +180,9 @@ function makeSelect() {
   const fruit = observable("avocado");
   const fruits = ["apple", "apricot", "avocado", "banana", "kiwi", "mango"];
   const btnElem = dom('div', testId('btn3'));
+  const menuCssClass = dom('div', testId('select-dropdown')).className;
   return dom('div', { style: `width: 200px;` },
-    select(fruit, fruits, { buttonCssClass: btnElem.className })
+    select(fruit, fruits, { buttonCssClass: btnElem.className, menuCssClass })
   );
 }
 
@@ -189,9 +190,10 @@ function makeComplexSelect() {
   console.log("makeComplexSelect");
   const employee = observable(0);
   const btnElem = cssSelectBtn(testId('btn4'));
+  const menuCssClass = dom('div', testId('select-dropdown')).className;
   return select(employee, employees, {
     defaultLabel: "Employee:",
-    menuCssClass: cssSelectMenu.className,
+    menuCssClass: cssSelectMenu.className + ' ' + menuCssClass,
     buttonCssClass: btnElem.className,
     buttonArrow: dom('div', {style: `margin: 0 5px;`}, 'v'),
     disabled: disableSelect

@@ -61,19 +61,21 @@ module.exports = {
   },
   plugins: [
     // see https://medium.com/webpack/typescript-webpack-super-pursuit-mode-83cc568dea79
-    new ForkTsCheckerWebpackPlugin({ checkSyntacticErrors: true })
+    new ForkTsCheckerWebpackPlugin()
   ],
   devServer: {
-    contentBase: path.resolve(__dirname),
-    port: 9000,
+    static: [{directory: "."}],
+    port: parseInt(process.env.PORT || '9000', 10),
 
     // Serve a trivial little index page with a directory, and a template for each project.
-    before: (app, server) => {
+    setupMiddlewares: (middlewares, devServer) => {
       // app is an express app; we get a chance to add custom endpoints to it.
-      app.get('/', (req, res) =>
+      devServer.app.get('/', (req, res) =>
         res.send(Object.keys(entries).map((e) => `<a href="${e}">${e}</a><br>\n`).join('')));
-      app.get(Object.keys(entries).map((e) => `/${e}`), (req, res) =>
-        res.send(htmlTemplate.replace('<NAME>', path.basename(req.url))));
+      devServer.app.get(Object.keys(entries).map((e) => `/${e}`), (req, res) => {
+        return res.send(htmlTemplate.replace('<NAME>', path.basename(req.url.split('?')[0])))
+      });
+      return middlewares;
     },
-  }
+  },
 };

@@ -1,6 +1,5 @@
 import {Disposable, dom, domDispose, Holder, IDisposable} from 'grainjs';
 import defaultsDeep = require('lodash/defaultsDeep');
-import defaultTo = require('lodash/defaultTo');
 import noop = require('lodash/noop');
 import Popper from 'popper.js';
 
@@ -265,7 +264,7 @@ export class PopupControl<T extends IPopupOptions = IPopupOptions> extends Dispo
    * this popup is already opened, the call is ignored.
    */
   public open(options: Partial<T> = {}, reopen: boolean = false) {
-    const showDelay: number = defaultTo(options.showDelay, this._showDelay);
+    const showDelay: number = options.showDelay ?? this._showDelay;
 
     // Ensure open() call cancels a delayed close() call.
     if (this._closeTimer) {

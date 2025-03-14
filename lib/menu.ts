@@ -422,11 +422,15 @@ export function menuItemSubmenu(
   );
 }
 
+// The no-op transform forces a stacking context to address a problem on Safari only where menus
+// would sometimes get cut off. Problem and fix are described in
+// https://ecomgraduates.com/blogs/news/fixing-z-index-issue-on-safari-browser.
 export const cssMenuWrap = styled('div', `
   position: absolute;
   display: flex;
   flex-direction: column;
   outline: none;
+  -webkit-transform: translate(0);
 `);
 
 export const cssMenu = styled('ul', `
