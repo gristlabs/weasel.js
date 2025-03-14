@@ -52,6 +52,7 @@ export interface IMenuOptions extends IPopupOptions {
 
 export interface ISubMenuOptions {
   menuCssClass?: string;    // If provided, applies the css class to the menu container.
+  menuWrapCssClass?: string;  // See IMenupOptions.
   expandIcon?:  () => DomElementArg; // Overrides the default expand icon.
   action?: (item: HTMLElement, event: Event) => void; // If provided, called when the item is clicked.
 }

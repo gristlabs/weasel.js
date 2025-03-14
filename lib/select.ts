@@ -19,6 +19,7 @@ export interface ISelectUserOptions {
   defaultLabel?: string;   // Button label displayed when no value is selected.
   buttonArrow?: DomArg;    // DOM for what is typically the chevron on the select button.
   menuCssClass?: string;   // If provided, applies the css class to the menu container.
+  menuWrapCssClass?: string;  // See menu.ts.
   buttonCssClass?: string;  // If provided, applies the css class to the select button.
   // If disabled, adds the .disabled class to the select button and prevents opening.
   disabled?: BindableValue<boolean>;
@@ -87,6 +88,7 @@ export function select<T>(
   const selectOptions: ISelectOptions = {
     ...defaultMenuOptions,
     menuCssClass: options.menuCssClass,
+    menuWrapCssClass: options.menuWrapCssClass,
     attach: options.attach === undefined ? defaultMenuOptions.attach : options.attach,
     trigger: [(triggerElem: Element, ctl: PopupControl) => {
       dom.onElem(triggerElem, 'click', () => isDisabled() || ctl.toggle());
