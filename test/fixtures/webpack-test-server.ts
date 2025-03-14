@@ -19,9 +19,8 @@ export class WebpackServer implements IMochaServer {
     }, webpack(config));
     const port = this._port = config.devServer.port;
 
-    await this._server.startCallback(() => {
-      console.log(`Starting server on http://localhost:${port}`);
-    });
+    await this._server.start();
+    console.log(`Started server on http://localhost:${port}`);
   }
 
   public async stop() {
