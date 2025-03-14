@@ -29,6 +29,11 @@ export interface IMenuOptions extends IPopupOptions {
   selectOnOpen?: boolean;
   menuCssClass?: string;    // If provided, applies the css class to the menu container.
 
+  // If provided, applies the css class to the wrapper around the menu container. This is
+  // recommended if you need to set the z-index on menus, since setting it on menuCssClass
+  // sometimes leads to truncated submenus in Safari.
+  menuWrapCssClass?: string;
+
   // If given, the menu will set the `weasel-popup-open` css class on the matching ancestor of the
   // trigger element (in addition to setting it on the trigger element itself). Useful to keep an
   // element highlighted while an associated menu is open.
@@ -166,7 +171,7 @@ export class BaseMenu extends Disposable implements IPopupContent {
 
     this._allowNothingSelected = Boolean(options.allowNothingSelected);
 
-    this.content = cssMenuWrap(
+    this.content = cssMenuWrap({class: options.menuWrapCssClass || ''},
       this._menuContent = cssMenu({class: options.menuCssClass || ''},
         items,
         stretchContainer ? (elem) => stretchMenuToContainer(elem, stretchContainer) : null,
@@ -422,15 +427,11 @@ export function menuItemSubmenu(
   );
 }
 
-// The no-op transform forces a stacking context to address a problem on Safari only where menus
-// would sometimes get cut off. Problem and fix are described in
-// https://ecomgraduates.com/blogs/news/fixing-z-index-issue-on-safari-browser.
 export const cssMenuWrap = styled('div', `
   position: absolute;
   display: flex;
   flex-direction: column;
   outline: none;
-  -webkit-transform: translate(0);
 `);
 
 export const cssMenu = styled('ul', `
