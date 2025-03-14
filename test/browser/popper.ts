@@ -6,6 +6,7 @@ describe('popper', () => {
 
   before(async function() {
     this.timeout(60000);      // Set a longer default timeout.
+    await driver.manage().window().setRect({width: 1280, height: 768});
     await driver.get(`${server.getHost()}/popper`);
   });
 

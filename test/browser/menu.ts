@@ -280,6 +280,7 @@ describe('menu', () => {
 
     // Check that input triggers allow navigation to menu items.
     await driver.sendKeys('a');
+    await assertOpen('.test-input1-menu', true);
     await driver.sendKeys(Key.DOWN);
     assert.equal(await driver.find('.test-input1-menu-item').hasFocus(), true);
 
