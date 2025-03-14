@@ -32,6 +32,7 @@ export interface IMenuOptions extends IPopupOptions {
   // If provided, applies the css class to the wrapper around the menu container. This is
   // recommended if you need to set the z-index on menus, since setting it on menuCssClass
   // sometimes leads to truncated submenus in Safari.
+  // More on Safari issue https://ecomgraduates.com/blogs/news/fixing-z-index-issue-on-safari-browser.
   menuWrapCssClass?: string;
 
   // If given, the menu will set the `weasel-popup-open` css class on the matching ancestor of the
