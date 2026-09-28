@@ -38,79 +38,105 @@ function setupTest() {
     cssResetButton('Back to top',
       dom.on('click', () => lastAction.set('')), testId('reset-top')
     ),
-    // tabindex makes it focusable, allowing us to test focus restore issues.
-    cssButton('My Menu',
-      testId('btn1'),
-      { tabindex: "0", role: "button" },
-      menu(makeMenu, {
-        parentSelectorToMark: '.' + cssExample.className,
-        trigger: ['click', {keys: ['Enter']}],
-      })
-    ),
-    cssButton('My Contextmenu',
-      testId('btn2'),
-      { tabindex: "-1", role: "button" },
-      menu(makeMenu, {
-        trigger: ['contextmenu'],
-        parentSelectorToMark: '.' + cssExample.className
-      })
-    ),
-    dom('button', testId('btn-native'), 'My Funky Menu', menu(makeFunkyMenu, funkyOptions)),
-    cssButton('My Menu that allow nothing selected',
-      {tabindex: '-1'},
-      testId('btn5'),
-      menu(makeMenu, {allowNothingSelected: true}),
-    ),
-    cssButton('My Menu with modifyContent arg',
-      testId('btn-modify-content'),
-      menu(() => [
-        testId('modify-content-menu'),
-        menuItem(() => console.log('Menu item: ModifyContent'), 'ModifyContent', testId('modify-content-item')),
-      ], {
-        modifyContent: (menuEl, ctl) => {
-          ctl.setOpenClass(menuEl, 'modify-content-open-class');
-        },
-      }),
-    ),
-    cssButton('My Menu with only checkbox items',
-      {tabindex: '0'},
-      testId('btn-only-checkbox-items'),
-      menu(() => [
-        testId('only-checkbox-items-menu'),
-        makeCheckboxItem('Checkbox 1'),
-        makeCheckboxItem('Checkbox 2', {"aria-disabled": "true"}),
-        makeCheckboxItem('Checkbox 3'),
-      ]),
-    ),
-    cssButton('My Menu with only disabled items',
-      {tabindex: '0'},
-      testId('btn-only-disabled-items'),
-      menu(() => [
-        testId('only-disabled-items-menu'),
-        menuItem(() => {}, 'Disabled stuff', dom.cls('disabled')),
-        menuItem(() => {}, 'Disabled stuff', dom.attr('aria-disabled', 'true')),
-        menuItem(() => {}, 'Disabled stuff', dom.cls('disabled')),
-      ]),
-    ),
-    cssButton('My Menu with grouped items',
-      {tabindex: '0'},
-      testId('btn-grouped-items'),
-      menu(() => [
-        testId('grouped-items-menu'),
-        menuItem(() => lastAction.set('Ungrouped item click'), 'Ungrouped item', testId('ungrouped-item')),
-        menuGroup('Grouped items header',
-          menuItem(() => lastAction.set('Grouped item click 1'), 'Grouped item 1', testId('grouped-item1')),
-          menuItem(() => lastAction.set('Grouped item click 2'), 'Grouped item 2', testId('grouped-item2')),
-          menuItemSubmenu(makePasteSubmenu, {}, 'Grouped submenu', testId('grouped-sub-item')),
-        ),
-        menuGroup('Grouped items header 2',
-          menuItem(() => lastAction.set('Grouped item click 2.1'), 'Grouped item 2.1'),
-          menuItemLink({href: 'https://getgrist.com'}, 'Grouped item link 2.2', {"aria-disabled": "true"}),
-          makeCheckboxItem('Grouped checkbox 2.3'),
-          menuItem(() => {}, 'Grouped item 2.4', dom.attr('aria-disabled', 'true')),
-          menuItem(() => lastAction.set('Grouped item click 2.5'), 'Grouped item 2.5'),
-        ),
-      ]),
+    cssButtonsContainer(
+      // tabindex makes it focusable, allowing us to test focus restore issues.
+      cssButton('My Menu',
+        testId('btn1'),
+        { tabindex: "0", role: "button" },
+        menu(makeMenu, {
+          parentSelectorToMark: '.' + cssExample.className,
+          trigger: ['click', {keys: ['Enter']}],
+        })
+      ),
+      cssButton('My Contextmenu',
+        testId('btn2'),
+        { tabindex: "-1", role: "button" },
+        menu(makeMenu, {
+          trigger: ['contextmenu'],
+          parentSelectorToMark: '.' + cssExample.className
+        })
+      ),
+      dom('button', testId('btn-native'), 'My Funky Menu', menu(makeFunkyMenu, funkyOptions)),
+      cssButton('My Menu that allow nothing selected',
+        {tabindex: '-1'},
+        testId('btn5'),
+        menu(makeMenu, {allowNothingSelected: true}),
+      ),
+      cssButton('My Menu with modifyContent arg',
+        testId('btn-modify-content'),
+        menu(() => [
+          testId('modify-content-menu'),
+          menuItem(() => console.log('Menu item: ModifyContent'), 'ModifyContent', testId('modify-content-item')),
+        ], {
+          modifyContent: (menuEl, ctl) => {
+            ctl.setOpenClass(menuEl, 'modify-content-open-class');
+          },
+        }),
+      ),
+      cssButton('My Menu with only checkbox items',
+        {tabindex: '0'},
+        testId('btn-only-checkbox-items'),
+        menu(() => [
+          testId('only-checkbox-items-menu'),
+          makeCheckboxItem('Checkbox 1'),
+          makeCheckboxItem('Checkbox 2', {"aria-disabled": "true"}),
+          makeCheckboxItem('Checkbox 3'),
+        ]),
+      ),
+      cssButton('My Menu with only disabled items',
+        {tabindex: '0'},
+        testId('btn-only-disabled-items'),
+        menu(() => [
+          testId('only-disabled-items-menu'),
+          menuItem(() => {}, 'Disabled stuff', dom.cls('disabled')),
+          menuItem(() => {}, 'Disabled stuff', dom.attr('aria-disabled', 'true')),
+          menuItem(() => {}, 'Disabled stuff', dom.cls('disabled')),
+        ]),
+      ),
+      cssButton('My Menu with mixed content',
+        {tabindex: '0'},
+        testId('btn-other-things'),
+        menu(() => [
+          testId('other-things-menu'),
+          makeCheckboxItem('Checkbox test'),
+          menuItem(() => lastAction.set("Hello"), "Hello", testId('hello')),
+          dom(
+            'div',
+            'Non-selectable (no tabindex)',
+            {role: 'menuitem', class: cssMenuItem.className},
+            dom.on('click', (_, elem) => isSelectable(elem) && lastAction.set('Non-selectable (no tabindex)'))
+          ),
+          menuItem(() => lastAction.set("Hola"), "Hola", testId('hola')),
+          dom(
+            'div',
+            'Non-selectable (no role)',
+            {tabindex: '-1', class: cssMenuItem.className},
+            dom.on('click', (_, elem) => isSelectable(elem) && lastAction.set('Non-selectable (no role)'))
+          ),
+          menuItem(() => {}, 'Goodbye', dom.attr('aria-disabled', 'true')),
+          menuItem(() => lastAction.set("Bonjour"), "Bonjour", testId('bonjour')),
+        ]),
+      ),
+      cssButton('My Menu with grouped items',
+        {tabindex: '0'},
+        testId('btn-grouped-items'),
+        menu(() => [
+          testId('grouped-items-menu'),
+          menuItem(() => lastAction.set('Ungrouped item click'), 'Ungrouped item', testId('ungrouped-item')),
+          menuGroup('Grouped items header',
+            menuItem(() => lastAction.set('Grouped item click 1'), 'Grouped item 1', testId('grouped-item1')),
+            menuItem(() => lastAction.set('Grouped item click 2'), 'Grouped item 2', testId('grouped-item2')),
+            menuItemSubmenu(makePasteSubmenu, {}, 'Grouped submenu', testId('grouped-sub-item')),
+          ),
+          menuGroup('Grouped items header 2',
+            menuItem(() => lastAction.set('Grouped item click 2.1'), 'Grouped item 2.1'),
+            menuItemLink({href: 'https://getgrist.com'}, 'Grouped item link 2.2', {"aria-disabled": "true"}),
+            makeCheckboxItem('Grouped checkbox 2.3'),
+            menuItem(() => {}, 'Grouped item 2.4', dom.attr('aria-disabled', 'true')),
+            menuItem(() => lastAction.set('Grouped item click 2.5'), 'Grouped item 2.5'),
+          ),
+        ]),
+      ),
     ),
     makeSelect(),
     makeComplexSelect({buttonTestId: 'btn4', defaultValue: 0}),
@@ -181,19 +207,6 @@ function makeMenu(ctl: IOpenController): DomElementArg[] {
     menuItem((elem) => popupOpen(elem, buildPopupContent, {
       placement: 'right',
     }), "popup", testId('popup-open')
-    ),
-    makeCheckboxItem('Checkbox test'),
-    dom(
-      'div',
-      'Non-selectable (no tabindex)',
-      {role: 'menuitem', class: cssMenuItem.className},
-      dom.on('click', (_, elem) => isSelectable(elem) && lastAction.set('Non-selectable (no tabindex)'))
-    ),
-    dom(
-      'div',
-      'Non-selectable (no role)',
-      {tabindex: '-1', class: cssMenuItem.className},
-      dom.on('click', (_, elem) => isSelectable(elem) && lastAction.set('Non-selectable (no role)'))
     ),
     cssMenuDivider(),
     menuItemSubmenu(makePasteSubmenu, {
@@ -363,6 +376,14 @@ const cssExample = styled('div', `
   }
 `);
 
+const cssButtonsContainer = styled('div', `
+  display: flex;
+  gap: 8px;
+  margin: 16px 0;
+  flex-wrap: wrap;
+  align-items: flex-start;
+`);
+
 const cssButton = styled('div', `
   width: 100px;
   font-size: 13px;
@@ -370,7 +391,6 @@ const cssButton = styled('div', `
   background-color: #4444aa;
   color: white;
   padding: 8px;
-  margin: 16px 0px;
   &:hover, &.weasel-popup-open {
     background-color: #6666cc;
   }
