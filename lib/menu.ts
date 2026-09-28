@@ -12,8 +12,9 @@
  * [1] Using "aria-disabled" is preferred over the "disabled" class for compatibility
  * with assistive technologies.
  *
- * [2] A non-selectable custom item can still be clicked. When building a custom menu item,
+ * [2] A non-selectable custom item can still be clicked, so when building a custom menu item,
  * make sure to use the `isSelectable` helper in your click callback to decide if its action should be triggered.
+ * Note that clicking non-selectable items don't close the menu.
  *
  * Further, if `dom.dataElem(elem, 'menuItemSelected', (yesNo: boolean, elem) => {})` is set, that
  * callback will be called whenever the item is selected and unselected. In addition, the selected
@@ -187,7 +188,7 @@ export const menuItemCheckbox = (checked: Observable<boolean>, ...args: DomEleme
     // Without this, browser triggers a programmatic click event on the input when clicking the label. Our click
     // listener would be triggered twice, once for the label, once for the input, resulting in the `checked`
     // observable being toggled twice with one actual user click.
-    if (ev.target instanceof HTMLElement && ev.target.closest('label') !== null && ev.target.tagName !== 'INPUT') {
+    if (ev.target instanceof Element && ev.target.closest('label') !== null && ev.target.tagName !== 'INPUT') {
       ev.preventDefault();
     }
     checked.set(!checked.get());

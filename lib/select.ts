@@ -86,6 +86,7 @@ export function select<T>(
     ),
     dom.on('keydown', (ev) => {
       if (isDisabled()) { return; }
+      if (ev.getModifierState('Control') || ev.getModifierState('Alt') || ev.getModifierState('Meta')) { return; }
       const sel = keyState.add(ev.key);
       if (sel) { obs.set(sel.value); }
     })

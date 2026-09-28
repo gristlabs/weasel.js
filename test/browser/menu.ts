@@ -57,6 +57,27 @@ describe('menu', () => {
     await assert.isRejected(driver.find('.test-copy'), /Unable to locate/);
   });
 
+  it('should toggle on trigger Enter keypress', async function() {
+    // start tabbing from the beginning
+    await driver.find('.test-reset-top').click();
+
+    // press Enter on a custom trigger element (div with tabindex, button role, etc.)
+    await driver.sendKeys(Key.TAB);
+    assert.equal(await driver.find('.test-btn1').hasFocus(), true);
+    await driver.sendKeys(Key.ENTER);
+    await assertOpen('.test-menu1', true);
+    await driver.sendKeys(Key.ESCAPE);
+    await assertOpen('.test-menu1', false);
+
+    // then press Enter on a <button> trigger element
+    await driver.sendKeys(Key.TAB);
+    assert.equal(await driver.find('button.test-btn-native').hasFocus(), true);
+    await driver.sendKeys(Key.ENTER);
+    await assertOpen('.test-funky-menu', true);
+    await driver.sendKeys(Key.ESCAPE);
+    await assertOpen('.test-funky-menu', false);
+  });
+
   it('should open on contextmenu', async function() {
     // Open contextmenu, check we see something.
     const btn = await driver.find('.test-btn2');

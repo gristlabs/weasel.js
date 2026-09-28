@@ -35,6 +35,9 @@ function setupTest() {
   }
 
   return cssExample(testId('top'),
+    cssResetButton('Back to top',
+      dom.on('click', () => lastAction.set('')), testId('reset-top')
+    ),
     // tabindex makes it focusable, allowing us to test focus restore issues.
     cssButton('My Menu',
       testId('btn1'),
@@ -52,7 +55,7 @@ function setupTest() {
         parentSelectorToMark: '.' + cssExample.className
       })
     ),
-    dom('button', 'My Funky Menu', menu(makeFunkyMenu, funkyOptions)),
+    dom('button', testId('btn-native'), 'My Funky Menu', menu(makeFunkyMenu, funkyOptions)),
     cssButton('My Menu that allow nothing selected',
       {tabindex: '-1'},
       testId('btn5'),
@@ -218,6 +221,7 @@ function makePasteSubmenu(): DomElementArg[] {
 function makeFunkyMenu(): DomElementArg[] {
   console.log("makeFunkyMenu");
   return [
+    testId('funky-menu'),
     menuItem(() => { console.log("Menu item: Cut"); }, "Cut"),
     menuItemSubmenu(makeFunkySubmenu, funkyOptions, "Paste Special"),
     menuItem(() => { console.log("Menu item: Copy"); }, "Copy"),
