@@ -93,16 +93,19 @@ describe('select', () => {
   it('should handle the selected element being disabled', async function() {
     await driver.find('.test-btn4b').click();
     await driver.findWait('.test-select-dropdown', 100);
-    const bob = await driver.findContent('li', /Bob/);
-    assert.isTrue(await bob.matches('[class*=-sel]'), 'Selected element on open should be the disabled one (Bob)');
+    const french = await driver.findContent('li', /French/);
+    assert.isTrue(await french.matches('[class*=-sel]'), 'Selected element on open should be the disabled one (French)');
 
     await driver.sendKeys(Key.DOWN);
+    const german = await driver.findContent('li', /German/);
+    assert.isTrue(await german.matches('[class*=-sel]'), 'Selected element after down arrow should be the next one (German)');
+
     await driver.sendKeys(Key.UP);
-    const notBob = await driver.findContent('li', /Wolfesch/);
-    assert.isTrue(await notBob.matches('[class*=-sel]'), 'Navigation should avoid the selected-but-disabled element');
+    const english = await driver.findContent('li', /English/);
+    assert.isTrue(await english.matches('[class*=-sel]'), 'Selected element after up arrow should be the one before French (English)');
 
     await driver.sendKeys(Key.ESCAPE);
-    assert.equal(await driver.find('.test-btn4b').getText(), 'Bob', 'Escaping should keep the disabled element as value (Bob)');
+    assert.match(await driver.find('.test-btn4b').getText(), /French/, 'Escaping should keep the disabled element as value (French)');
   });
 
   it('should allow typing to change selection when open', async function() {

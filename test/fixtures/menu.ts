@@ -2,7 +2,7 @@
  * This tests our tooltip implementation.
  */
 // tslint:disable:no-console
-import {dom, DomElementArg, input, makeTestId, obsArray, observable, styled, TestId} from 'grainjs';
+import {dom, DomElementArg, input, IOption, makeTestId, MaybeObsArray, obsArray, observable, styled, TestId} from 'grainjs';
 import {cssMenuDivider, cssMenuItem, isSelectable, menu, menuGroup, menuItem, menuItemCheckbox, menuItemLink, menuItemSubmenu, popupOpen} from '../../index';
 import {IOpenController, PopupControl} from '../../index';
 import {autocomplete, inputMenu, select} from '../../index';
@@ -20,6 +20,15 @@ const employees = observable([
   {value: 21, label: "Eve"},
   {value: 19, label: "James"},
   {value: 18, label: "Wolfeschlegelsteinhausenbergerdorff"}
+]);
+
+const languages = observable([
+  {value: 'en', label: 'English'},
+  {value: 'fr', label: 'French', disabled: true},
+  {value: 'de', label: 'German'},
+  {value: 'it', label: 'Italian', disabled: true},
+  {value: 'pt', label: 'Portuguese'},
+  {value: 'es', label: 'Spanish'},
 ]);
 
 function setupTest() {
@@ -139,9 +148,9 @@ function setupTest() {
       ),
     ),
     makeSelect(),
-    makeComplexSelect({buttonTestId: 'btn4', defaultValue: 0}),
-    // Same select, but we test if it works with a disabled item as the current value.
-    makeComplexSelect({buttonTestId: 'btn4b', defaultValue: employees.get().find((e) => e.disabled)?.value ?? 0}),
+    makeComplexSelect({buttonTestId: 'btn4', list: employees, defaultValue: 0}),
+    // Now we test if it works with a disabled item as the current value.
+    makeComplexSelect({buttonTestId: 'btn4b', list: languages, defaultValue: 'fr'}),
     cssInputContainer(
       cssInput(inputObs, {onInput: true}, {placeholder: 'My Input Menu'},
         inputMenu(makeInputMenu, {trigger: [inputTrigger], attach: null, menuCssClass: cssInputMenu.className}),
@@ -274,12 +283,12 @@ function makeSelect() {
   );
 }
 
-function makeComplexSelect({buttonTestId, defaultValue}: {buttonTestId: string, defaultValue: number}) {
+function makeComplexSelect({buttonTestId, list, defaultValue}: {buttonTestId: string, list: MaybeObsArray<IOption<any>>, defaultValue: any}) {
   console.log("makeComplexSelect");
-  const employee = observable(defaultValue);
+  const value = observable(defaultValue);
   const btnElem = cssSelectBtn(testId(buttonTestId));
   const menuCssClass = dom('div', testId('select-dropdown')).className;
-  return select(employee, employees, {
+  return select(value, list, {
     defaultLabel: "Employee:",
     menuCssClass: cssSelectMenu.className + ' ' + menuCssClass,
     buttonCssClass: btnElem.className,
@@ -417,10 +426,11 @@ const cssFunkyMenu = styled('div', `
 `);
 
 const cssSelectBtn = styled('div', `
-  width: 100px;
-  height: 20px;
-  line-height: 20px;
+  width: 130px;
+  height: auto;
+  line-height: 1;
   margin: 16px 0;
+  display: flex !important;
 `);
 
 const cssSelectMenu = styled('div', `

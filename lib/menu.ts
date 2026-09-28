@@ -403,7 +403,7 @@ export class BaseMenu extends Disposable implements IPopupContent {
     const selectables = this._getSelectables();
     if (!selectables.length) { return; }
     const next = this._getNextSelectable(
-      this._selected, (elem) => this._findSibling(elem, selectables, 'next'), selectables[0]
+      this._selected, (elem) => this._findSibling(elem, this._getMenuItems(), 'next'), selectables[0]
     );
     this.setSelected(next);
   }
@@ -412,15 +412,15 @@ export class BaseMenu extends Disposable implements IPopupContent {
     const selectables = this._getSelectables();
     if (!selectables.length) { return; }
     const next = this._getNextSelectable(
-      this._selected, (elem) => this._findSibling(elem, selectables, 'prev'), selectables[selectables.length - 1]
+      this._selected, (elem) => this._findSibling(elem, this._getMenuItems(), 'prev'), selectables[selectables.length - 1]
     );
     this.setSelected(next);
   }
 
-  private _findSibling(elem: Element | null, selectables: Element[], direction: 'next' | 'prev'): Element | null {
+  private _findSibling(elem: Element | null, items: Element[], direction: 'next' | 'prev'): Element | null {
     if (!elem) { return null; }
-    const index = selectables.indexOf(elem);
-    return selectables[index + (direction === 'next' ? 1 : -1)];
+    const index = items.indexOf(elem);
+    return items[index + (direction === 'next' ? 1 : -1)];
   }
 
   // When the selected element changes, update the classes of the formerly and newly-selected
@@ -464,8 +464,12 @@ export class BaseMenu extends Disposable implements IPopupContent {
     }
   }
 
+  private _getMenuItems() {
+    return Array.from(this._menuContent.querySelectorAll('[tabindex]')).filter(isMenuItem);
+  }
+
   private _getSelectables() {
-    return Array.from(this._menuContent.querySelectorAll('[tabindex]')).filter(item => isSelectable(item));
+    return this._getMenuItems().filter(isSelectable);
   }
 
   /**
@@ -526,15 +530,19 @@ function isMenuContainer(elem: Element|null) {
   return elem && elem.classList.contains(cssMenu.className);
 }
 
+
+function isMenuItem(elem: Element): boolean {
+  return elem.hasAttribute('tabIndex')
+    && ['menuitem', 'menuitemcheckbox', 'option'].includes(elem.getAttribute('role') || '')
+    // Offset height > 0 is used to determine if the element is visible.
+    && (elem as HTMLElement).offsetHeight > 0;
+}
+
 /**
  * Returns a boolean indicating whether the Element is selectable in the menu.
  */
 export function isSelectable(elem: Element): elem is HTMLElement {
-  // Offset height > 0 is used to determine if the element is visible.
-  return elem.hasAttribute('tabIndex')
-    && ['menuitem', 'menuitemcheckbox', 'option'].includes(elem.getAttribute('role') || '')
-    && !isDisabled(elem)
-    && (elem as HTMLElement).offsetHeight > 0;
+  return isMenuItem(elem) && !isDisabled(elem);
 }
 
 function isDisabled(elem: Element): boolean {
