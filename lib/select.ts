@@ -1,6 +1,6 @@
 import {dom, DomArg, DomContents, DomElementArg, onElem, styled} from 'grainjs';
 import {BindableValue, Computed, MaybeObsArray, Observable} from 'grainjs';
-import {BaseMenu, defaultMenuOptions, IMenuOptions, menuItem} from './menu';
+import {BaseMenu, updateListAria, defaultMenuOptions, IMenuOptions, menuItem} from './menu';
 import {IOpenController, IPopupOptions, PopupControl, setPopupToFunc} from './popup';
 
 export interface IOptionFull<T> {
@@ -68,17 +68,25 @@ export function select<T>(
   });
 
   // Select button and associated event/disposal DOM.
-  const selectBtn: HTMLElement = cssSelectBtn({tabIndex: '0', class: options.buttonCssClass || ''},
+  const selectBtn: HTMLElement = cssSelectBtn(
+    {
+      tabIndex: '0',
+      type: 'button',
+      class: options.buttonCssClass || '',
+      'aria-haspopup': 'listbox',
+      'aria-expanded': 'false',
+    },
     dom.autoDispose(selected),
     options.disabled ? dom.cls('disabled', options.disabled) : null,
     cssBtnText(
       dom.domComputed(selected, sel => renderOption(sel))
     ),
-    dom('div', {style: 'flex: none;'},
+    dom('div', {'aria-hidden': 'true', style: 'flex: none;'},
       options.buttonArrow
     ),
     dom.on('keydown', (ev) => {
       if (isDisabled()) { return; }
+      if (ev.getModifierState('Control') || ev.getModifierState('Alt') || ev.getModifierState('Meta')) { return; }
       const sel = keyState.add(ev.key);
       if (sel) { obs.set(sel.value); }
     })
@@ -96,7 +104,8 @@ export function select<T>(
       dom.onElem(triggerElem, 'click', () => isDisabled() || ctl.toggle());
       dom.onKeyElem(triggerElem as HTMLElement, 'keydown', {
         ArrowDown: () => isDisabled() || ctl.open(),
-        ArrowUp: () => isDisabled() || ctl.open()
+        ArrowUp: () => isDisabled() || ctl.open(),
+        Enter: () => isDisabled() || ctl.open(),
       });
     }],
     selectLabelOnOpen: () => selected.get().label,
@@ -109,9 +118,19 @@ export function select<T>(
       const obj: IOptionFull<T> = getOptionFull(option);
       // Note we only set 'selected' when an <option> is created; we are not subscribing to obs.
       // This is to reduce the amount of subscriptions, esp. when number of options is large.
-      return menuItem(() => { obs.set(obj.value); },
-        Object.assign({disabled: obj.disabled, selected: obj.value === obs.get()},
-          obj.disabled ? {class: 'disabled'} : {}),
+      const selected = obj.value === obs.get();
+      return menuItem(
+        () => { obs.set(obj.value); },
+        {
+          disabled: obj.disabled,
+          ...(obj.disabled ? {class: 'disabled'} : {}),
+          selected,
+          // aria attrs expect specific values as strings so we can't directly
+          // rely on `obj.disabled` or `selected` as values
+          'aria-disabled': obj.disabled ? "true" : undefined,
+          'aria-selected': selected ? "true" : "false",
+          role: 'option',
+        },
         renderOption(obj)
       );
     })
@@ -146,8 +165,11 @@ class Select<T> extends BaseMenu {
   constructor(ctl: IOpenController, items: DomElementArg[], options: ISelectOptions = {}) {
     super(ctl, items, options);
 
+    updateListAria(this, ctl.getTriggerElem(), this._menuContent, {role: 'listbox'});
+
     // On keydown, search for the first element with a matching label.
     onElem(this._menuContent, 'keydown', (ev) => {
+      if (ev.getModifierState('Control') || ev.getModifierState('Alt') || ev.getModifierState('Meta')) { return; }
       const sel = this._keyState.add(ev.key);
       if (sel) { this._selectRow(sel.label); }
     });
@@ -222,7 +244,11 @@ const cssBtnText = styled('div', `
   text-overflow: ellipsis;
 `);
 
-const cssSelectBtn = styled('div', `
+const cssSelectBtn = styled('button', `
+  margin: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  opacity: 1;
   position: relative;
   display: flex;
   justify-content: space-between;

@@ -2,9 +2,19 @@
  * A menu is a collection of menu items. Besides holding the items, it also knows which item is
  * selected, and allows selection via the keyboard.
  *
- * The standard menu item offers enough flexibility to suffice for many needs, and may be replaced
- * entirely by a custom item. For an item to be a selectable menu item, it needs `tabindex=-1`
- * attribute set. If unset, or if the "disabled" class is set, the item will not be selectable.
+ * The standard menu item helpers (`menuItem` and `menuItemCheckbox`) offer enough flexibility to suffice for many needs,
+ * and may be replaced entirely by custom items.
+ * For an item to be a selectable menu item, it needs `tabindex=-1` attribute set, and a role of either
+ * "menuitem", "menuitemcheckbox", or "option" (for selects).
+ * If there is no tabindex or role, if "aria-disabled" is set to "true", or if the "disabled" class is set[1],
+ * the item will not be selectable[2].
+ *
+ * [1] Using "aria-disabled" is preferred over the "disabled" class for compatibility
+ * with assistive technologies.
+ *
+ * [2] A non-selectable custom item can still be clicked, so when building a custom menu item,
+ * make sure to use the `isSelectable` helper in your click callback to decide if its action should be triggered.
+ * Note that clicking non-selectable items don't close the menu.
  *
  * Further, if `dom.dataElem(elem, 'menuItemSelected', (yesNo: boolean, elem) => {})` is set, that
  * callback will be called whenever the item is selected and unselected. In addition, the selected
@@ -13,10 +23,11 @@
  * Clicks on items will normally propagate to the menu, where they get caught and close the menu.
  * If a click on an item should not close the menu, the item should stop the click's propagation.
  */
-import {dom, domDispose, DomElementArg, DomElementMethod, DomMethod, EventCB, styled} from 'grainjs';
+import {dom, domDispose, DomElementArg, DomElementMethod, DomMethod, EventCB, Observable, styled} from 'grainjs';
 import {Disposable, onKeyDown, onKeyElem} from 'grainjs';
 import defaultsDeep = require('lodash/defaultsDeep');
 import mergeWith = require('lodash/mergeWith');
+import uniqueId = require('lodash/uniqueId');
 import {IOpenController, IPopupContent, IPopupOptions, PopupControl, setPopupToFunc} from './popup';
 import {ISelectOptions} from './select';
 
@@ -64,6 +75,8 @@ export interface ISubMenuOptions {
   action?: (item: HTMLElement, event: Event) => void; // If provided, called when the item is clicked.
 }
 
+const weaselIdPrefix = 'weasel-element-';
+
 /**
  * Attaches a menu to its trigger element, for example:
  *    dom('div', 'Open menu', menu((ctl) => [
@@ -101,6 +114,25 @@ function baseElem(createFn: MenuClassCons, triggerElem: Element, createFunc: Men
   // the exact value from options if present.
   options = mergeWith({}, defaultMenuOptions, options,
     (objValue: any, srcValue: any) => Array.isArray(srcValue) ? srcValue : undefined);
+
+  const isInput = triggerElem.tagName.toLowerCase() === 'input';
+  // We don't do anything for input menus as they require a different approach to work correctly with
+  // screen readers (not implemented).
+  if (!isInput) {
+    if (!triggerElem.id) {
+      triggerElem.id = uniqueId(weaselIdPrefix);
+    }
+    // The aria-expanded attr makes screen readers (SR) announce that the button is expandable, when focus is on it.
+    // We don't want to announce that when the trigger is not a normal click/keypress, for example a contextmenu event.
+    // Otherwise SR users might try to activate the button with Enter and get confused why it doesn't work.
+    const useExpandedAttr = options.trigger?.some(t =>
+      t === "click" || (typeof t === 'object' && t.keys?.includes('Enter'))
+    );
+    if (useExpandedAttr) {
+      triggerElem.setAttribute('aria-expanded', 'false');
+    }
+  }
+
   setPopupToFunc(triggerElem,
     (ctl, opts) => createFn(null, ctl, createFunc(ctl), defaultsDeep(opts, options)),
     options);
@@ -109,17 +141,73 @@ function baseElem(createFn: MenuClassCons, triggerElem: Element, createFunc: Men
 /**
  * Implements a single menu item.
  *
- * The appearance of the menuItem components can be changed by setting the followingcss variables
+ * The item is generated with tabindex="-1". To generate a menu item that is not selectable,
+ * set its "aria-disabled" attribute to "true" with additional args.
+ *
+ * The appearance of the menuItem components can be changed by setting the following css variables
  * in the parent project:
  *    --weaseljs-selected-background-color
  *    --weaseljs-selected-color
  *    --weaseljs-menu-item-padding
  */
 export function menuItem(action: (item: HTMLElement, ev: Event) => void, ...args: DomElementArg[]): Element {
+  const triggerAction = (ev: Event, item: HTMLElement) => {
+    if (isDisabled(item)) {
+      ev.preventDefault();
+    } else {
+      action(item, ev);
+    }
+  }
   return cssMenuItem(
+    {role: 'menuitem'},
     ...args,
-    dom.on('click', (ev, elem) => elem.classList.contains('disabled') || action(elem, ev)),
-    onKeyDown({Enter$: (ev, elem) => action(elem, ev)})
+    dom.on('click', triggerAction),
+    // `tabindex="-1"` is automatically added by the onKeyDown helper, making the item selectable by default.
+    onKeyDown({ "Enter$": triggerAction })
+  );
+}
+
+/**
+ * A toggleable menu item.
+ *
+ * This makes sure screen readers correctly announce the menu item as checked/unchecked.
+ * You are expected to provide your own UI that reflects the observable as the item content.
+ * A classic checkbox input element tied to the observable can be used.
+ *
+ * The item is generated with tabindex="-1". To generate a menu item that is not selectable,
+ * set its "aria-disabled" attribute to "true" through the additional args.
+ */
+export const menuItemCheckbox = (checked: Observable<boolean>, ...args: DomElementArg[]) => {
+  const toggle = (ev: Event, item: HTMLElement) => {
+    if (isDisabled(item)) {
+      ev.preventDefault();
+      return;
+    }
+    // UI provided has chances to be a classic label+input pair. In that case, we prevent default's browser behavior
+    // if we click the label.
+    // Without this, browser triggers a programmatic click event on the input when clicking the label. Our click
+    // listener would be triggered twice, once for the label, once for the input, resulting in the `checked`
+    // observable being toggled twice with one actual user click.
+    if (ev.target instanceof Element && ev.target.closest('label') !== null && ev.target.tagName !== 'INPUT') {
+      ev.preventDefault();
+    }
+    checked.set(!checked.get());
+  }
+  return cssMenuItem(
+    {role: 'menuitemcheckbox'},
+    dom.attr("aria-checked", use => use(checked) ? "true" : "false"),
+    ...args,
+    dom.on('click', toggle),
+    // `tabindex="-1"` is automatically added by the onKeyDown helper, making the item selectable by default.
+    onKeyDown({
+      "Enter$": toggle,
+      // Space key is used to toggle a checkbox item without closing the parent menu.
+      " $": (ev, item) => {
+          // We always prevent default here to prevent browser from scrolling.
+          ev.preventDefault();
+          toggle(ev, item);
+      }
+    })
   );
 }
 
@@ -127,9 +215,51 @@ export function menuItem(action: (item: HTMLElement, ev: Event) => void, ...args
  * A version of menuItem that's an <a> link element.
  */
 export function menuItemLink(...args: DomElementArg[]): Element {
-  return cssMenuItemLink({tabindex: '-1'}, cssMenuItem.cls(''), ...args,
+  const preventActionIfDisabled = (ev: Event, item: HTMLElement) => {
+    if (isDisabled(item)) {
+      ev.preventDefault();
+      return;
+    }
+  }
+  return cssMenuItemLink(
+    {tabindex: '-1', role: 'menuitem'},
+    cssMenuItem.cls(''),
+    ...args,
+    dom.on('click', preventActionIfDisabled),
     // This prevents propagation, but NOT the default action, which is to open the link.
-    onKeyDown({Enter$: (ev) => ev.stopPropagation()})
+    onKeyDown({Enter$: (ev, item) => {
+      ev.stopPropagation();
+      return preventActionIfDisabled(ev, item);
+    }})
+  );
+}
+
+/**
+ * A group of menu items with a visible heading, that is correctly announced
+ * by screen readers.
+ *
+ * You should use a menuGroup instead of manually building a menu
+ * that has a heading and menu items as siblings. Otherwise, screen readers won't correctly
+ * announce the items relationships to the user.
+ *
+ * Example:
+ *   menu(() => [
+ *     menuItem(() => {}, 'Ungrouped item'),
+ *     menuGroup('Grouped items header',
+ *       menuItem(() => {}, 'Grouped item 1'),
+ *       menuItem(() => {}, 'Grouped item 2'),
+ *     ),
+ *   ]),
+ */
+export function menuGroup(heading: DomElementArg, ...args: DomElementArg[]): Element {
+  const headingId = uniqueId(weaselIdPrefix);
+  return cssMenuGroup(
+    {
+      role: 'group',
+      'aria-labelledby': headingId,
+    },
+    dom('div', {id: headingId, role: 'presentation'}, heading),
+    ...args
   );
 }
 
@@ -138,7 +268,7 @@ export const defaultMenuOptions: IMenuOptions = {
   boundaries: 'viewport',
   placement: 'bottom-start',
   showDelay: 0,
-  trigger: ['click'],
+  trigger: ['click', {keys: ['Enter']}],
   modifiers: {
     // gpuAcceleration (true by default) causes a tiny UI artifact: attempting to drag a link, at
     // least in Firefox, causes it to be dragged from a different location on the screen where it
@@ -146,6 +276,45 @@ export const defaultMenuOptions: IMenuOptions = {
     computeStyle: {gpuAcceleration: false}
   },
 };
+
+
+/**
+ * Update the few ARIA attributes related to toggling on/off a menu popup related to a trigger element.
+ */
+export function updateListAria(
+  owner: BaseMenu,
+  triggerElem: Element,
+  listElem: HTMLElement,
+  options: { role: 'menu' | 'listbox' },
+) {
+  if (!listElem.id) {
+    listElem.id = uniqueId(weaselIdPrefix);
+  }
+  listElem.setAttribute('role', options.role);
+  if (options.role === 'listbox') {
+    listElem.setAttribute('aria-orientation', 'vertical');
+  }
+  // The aria-expanded attribute is not always set on the trigger button, in case of a contextmenu trigger for example
+  // (see comment in `baseElem` above). Make sure to not add it by mistake in that case.
+  if (triggerElem.hasAttribute('aria-expanded')) {
+    triggerElem.setAttribute('aria-expanded', 'true');
+  }
+  triggerElem.setAttribute('aria-controls', listElem.id);
+  // Without aria-owns, some screen readers announce unnecessary and verbose context change when closing the menu,
+  // because the menu's list is a direct child of the body element and not a child or sibling of the trigger element.
+  triggerElem.setAttribute('aria-owns', listElem.id);
+  if (options.role === 'menu' && triggerElem.id && !listElem.getAttribute('aria-labelledby')) {
+    listElem.setAttribute('aria-labelledby', triggerElem.id);
+  }
+  owner.onDispose(() => {
+    // See comment above when setting the aria-expanded attribute.
+    if (triggerElem.hasAttribute('aria-expanded')) {
+      triggerElem.setAttribute('aria-expanded', 'false');
+    }
+    triggerElem.removeAttribute('aria-controls');
+    triggerElem.removeAttribute('aria-owns');
+  });
+}
 
 /**
  * Implementation of the BaseMenu. Extended by Menu and Select.
@@ -189,19 +358,35 @@ export class BaseMenu extends Disposable implements IPopupContent {
         onKeyDown({
           ArrowDown: () => this.nextIndex(),
           ArrowUp: () => this.prevIndex(),
-          ...options.isSubMenu ? {
-            ArrowLeft: () => ctl.close(0),
-          } : {},
+          ArrowLeft: options.isSubMenu ? () => ctl.close(0) : () => {},
+          // We disable the right arrow key in case a global shortcut bound to it would collide
+          ArrowRight: () => {}
         }),
         (el) => options.modifyContent?.(el, ctl)
       ),
       // Events set on the parent of _menuContent receive events bubbled up from submenus.
-      dom.on('click', (ev) => isInSelectableItem(ev.target as Element) ? ctl.close(0) : ev.stopPropagation()),
-      options.isSubMenu ? null :
-        onKeyDown({
-          Escape: () => ctl.close(0),
+      dom.on('click', (ev) => {
+        const item = findMenuItem(ev.target as Element);
+        if (item && isSelectable(item)) {
+          // Items might be checkboxes, in that case we don't want to close the menu on click
+          if (item.getAttribute('role') !== 'menuitemcheckbox') {
+            ctl.close(0);
+          }
+        } else {
+          ev.stopPropagation();
+        }
+      }),
+      onKeyDown({
+        Escape: () => ctl.close(0),
+        ...(options.isSubMenu ? {} : {
           Enter: () => ctl.close(0),    // gets bubbled key after action is taken.
+          // prevent using the Tab key to navigate: we use arrow keys
+          Tab: (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+          },
         }),
+      }),
     );
     this.onDispose(() => domDispose(this.content));
   }
@@ -215,17 +400,27 @@ export class BaseMenu extends Disposable implements IPopupContent {
   }
 
   protected nextIndex(): void {
+    const selectables = this._getSelectables();
+    if (!selectables.length) { return; }
     const next = this._getNextSelectable(
-      this._selected, (elem) => elem.nextElementSibling, this._menuContent.firstElementChild
+      this._selected, (elem) => this._findSibling(elem, this._getMenuItems(), 'next'), selectables[0]
     );
     this.setSelected(next);
   }
 
   protected prevIndex(): void {
+    const selectables = this._getSelectables();
+    if (!selectables.length) { return; }
     const next = this._getNextSelectable(
-      this._selected, (elem) => elem.previousElementSibling, this._menuContent.lastElementChild
+      this._selected, (elem) => this._findSibling(elem, this._getMenuItems(), 'prev'), selectables[selectables.length - 1]
     );
     this.setSelected(next);
+  }
+
+  private _findSibling(elem: Element | null, items: Element[], direction: 'next' | 'prev'): Element | null {
+    if (!elem) { return null; }
+    const index = items.indexOf(elem);
+    return items[index + (direction === 'next' ? 1 : -1)];
   }
 
   // When the selected element changes, update the classes of the formerly and newly-selected
@@ -255,8 +450,9 @@ export class BaseMenu extends Disposable implements IPopupContent {
 
   private _onMouseOver(ev: MouseEvent) {
     if (!isMenuContainer(ev.target as Element)) {
-      const elem = this._findTargetItem(ev);
-      this.setSelected(elem);     // If elem is null, intentionally deselect.
+      // If we don't find an item or it's not selectable, intentionally deselect.
+      const elem = findMenuItem(ev.target as Element);
+      this.setSelected(elem && isSelectable(elem) ? elem : null);
     }
   }
 
@@ -268,10 +464,12 @@ export class BaseMenu extends Disposable implements IPopupContent {
     }
   }
 
-  private _findTargetItem(ev: MouseEvent): HTMLElement|null {
-    // Find immediate child of this._menuContent which is an ancestor of ev.target.
-    const elem = findAncestorChild(this._menuContent, ev.target as Element);
-    return elem && isSelectable(elem) ? elem : null;
+  private _getMenuItems() {
+    return Array.from(this._menuContent.querySelectorAll('[tabindex]')).filter(isMenuItem);
+  }
+
+  private _getSelectables() {
+    return this._getMenuItems().filter(isSelectable);
   }
 
   /**
@@ -302,6 +500,7 @@ export class BaseMenu extends Disposable implements IPopupContent {
 export class Menu extends BaseMenu implements IPopupContent {
   constructor(ctl: IOpenController, items: DomElementArg[], options: IMenuOptions = {}) {
     super(ctl, items, options);
+    updateListAria(this, ctl.getTriggerElem(), this._menuContent, {role: 'menu'});
 
     setTimeout(() =>
       (options.selectOnOpen ? this.nextIndex() : this._menuContent.focus()), 0);
@@ -331,34 +530,32 @@ function isMenuContainer(elem: Element|null) {
   return elem && elem.classList.contains(cssMenu.className);
 }
 
+
+function isMenuItem(elem: Element): boolean {
+  return elem.hasAttribute('tabIndex')
+    && ['menuitem', 'menuitemcheckbox', 'option'].includes(elem.getAttribute('role') || '')
+    // Offset height > 0 is used to determine if the element is visible.
+    && (elem as HTMLElement).offsetHeight > 0;
+}
+
 /**
  * Returns a boolean indicating whether the Element is selectable in the menu.
  */
-function isSelectable(elem: Element): elem is HTMLElement {
-  // Offset height > 0 is used to determine if the element is visible.
-  return elem.hasAttribute('tabIndex') && !elem.classList.contains('disabled') &&
-    (elem as HTMLElement).offsetHeight > 0;
+export function isSelectable(elem: Element): elem is HTMLElement {
+  return isMenuItem(elem) && !isDisabled(elem);
+}
+
+function isDisabled(elem: Element): boolean {
+  return elem?.classList.contains('disabled') || elem?.getAttribute('aria-disabled') === 'true';
 }
 
 /**
- * Whether the given element is part of a selectable item. A click on it will close menus.
+ * Finds the menu item (role menuitem / menuitemcheckbox / option) that contains elem,
+ * within its nearest menu. Items may be nested inside groups, so this is not necessarily
+ * a direct child of the menu container.
  */
-function isInSelectableItem(elem: Element): boolean {
-  // Similar to _findTargetItem, but finds the menu item (direct child of cssMenu) containing
-  // elem, regardless of which menu or submenu it's in, and returns whether it's selectable.
-  const item = findAncestorChild(elem.closest('.' + cssMenu.className)!, elem);
-  return item ? isSelectable(item) : false;
-}
-
-/**
- * Helper function which returns the direct child of ancestor which is an ancestor of elem, or
- * null if elem is not a descendant of ancestor.
- */
-function findAncestorChild(ancestor: Element, elem: Element|null): Element|null {
-  while (elem && elem.parentElement !== ancestor) {
-    elem = elem.parentElement;
-  }
-  return elem;
+function findMenuItem(elem: Element) {
+  return elem.closest(`.${cssMenu.className} :is([role="menuitem"], [role="menuitemcheckbox"], [role="option"])`);
 }
 
 /**
@@ -410,6 +607,8 @@ export function menuItemSubmenu(
     options.expandIcon ? options.expandIcon() : cssExpandIcon(),
     dom.autoDispose(ctl),
 
+    {'role': 'menuitem', 'aria-expanded': 'false'},
+
     // Set the submenu to be attached as a child of this element rather than as a sibling.
     menu(submenu, popupOptions),
 
@@ -428,7 +627,7 @@ export function menuItemSubmenu(
 
     // Clicks that open a submenu should not cause parent menu to close.
     dom.on('click', (ev, elem) => {
-      if (options.action && !elem.classList.contains('disabled')) {
+      if (options.action && !isDisabled(elem)) {
         options.action(elem, ev);
       } else {
         ev.stopPropagation();
@@ -474,10 +673,19 @@ export const cssMenuItem = styled('li', `
     background-color: var(--weaseljs-selected-background-color, #5AC09C);
     color:            var(--weaseljs-selected-color, white);
   }
-  &.disabled {
+  &.disabled, &[aria-disabled="true"],
+  &.disabled:hover, &[aria-disabled="true"]:hover,
+  &.disabled:focus, &[aria-disabled="true"]:focus {
     color: grey;
   }
 `);
+
+export const cssMenuGroup = styled('div', `
+  & [role="presentation"] {
+    text-transform: var(--weaseljs-menu-group-text-transform, uppercase);
+    padding: var(--weaseljs-menu-item-padding, 8px 24px);
+  }
+`)
 
 export const cssMenuItemLink = styled('a', `
   display: flex;
@@ -495,9 +703,12 @@ export const cssMenuItemLink = styled('a', `
   &.${cssMenuItem.className}-sel {
     color: var(--weaseljs-selected-color, white);
   }
+  &.disabled, &[aria-disabled="true"] {
+    cursor: default;
+  }
 `);
 
-export const cssMenuDivider = styled('div', `
+export const cssMenuDivider = styled((...args: DomElementArg[]) => dom("div", { "aria-hidden": "true" }, ...args), `
   height: 1px;
   width: 100%;
   margin: 4px 0;

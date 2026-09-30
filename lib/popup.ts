@@ -230,7 +230,12 @@ export class PopupControl<T extends IPopupOptions = IPopupOptions> extends Dispo
           // Call instances of AttachTriggerFunc to attach any custom trigger events.
           trigger(triggerElem, this);
         } else if (typeof trigger === "object" && "keys" in trigger) {
-          dom.onElem(triggerElem, 'keydown', (ev) => trigger.keys.includes(ev.key) && this.toggle());
+          dom.onElem(triggerElem, 'keydown', (ev) => {
+            if (trigger.keys.includes(ev.key)) {
+              ev.preventDefault();
+              this.toggle();
+            }
+          });
         } else {
           switch (trigger) {
             case 'click':

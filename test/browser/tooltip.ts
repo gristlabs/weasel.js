@@ -25,8 +25,7 @@ describe('tooltip', () => {
     this.timeout(20000);
     for (const side of ['Top', 'Right', 'Bottom', 'Left']) {
       const button = await driver.findContent('.test-top button', new RegExp(`Body ${side}`)).mouseMove();
-      await driver.sleep(10);
-      await assertPosition(driver.findContent('div', /body top/), button, 'above', 20);
+      await assertPosition(driver.findContentWait('div', /body top/, 2000), button, 'above', 20);
       await assertPosition(driver.findContent('div', /body right/), button, 'rightOf', 20);
       await assertPosition(driver.findContent('div', /body bottom/), button, 'below', 20);
       await assertPosition(driver.findContent('div', /body left/), button, 'leftOf', 20);
@@ -36,8 +35,7 @@ describe('tooltip', () => {
   it('should position relative to an element if requested', async function() {
     for (const side of ['Top', 'Right', 'Bottom', 'Left']) {
       const button = await driver.findContent('.test-top button', new RegExp(`Parent ${side}`)).mouseMove();
-      await driver.sleep(10);
-      await assertPosition(driver.findContent('div', /parent top/), button,
+      await assertPosition(driver.findContentWait('div', /parent top/, 2000), button,
         side === 'Top' ? 'below' : 'above', 20);
       await assertPosition(driver.findContent('div', /parent right/), button,
         side === 'Right' ? 'leftOf' : 'rightOf', 20);

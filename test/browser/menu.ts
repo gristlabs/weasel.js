@@ -15,6 +15,36 @@ describe('menu', () => {
     await driver.find('.test-reset').click();
   });
 
+  it('should use ARIA attributes', async function() {
+    const trigger = await driver.find('.test-btn1');
+    assert.equal(await trigger.getAttribute('aria-expanded'), 'false');
+    assert.notOk(await trigger.getAttribute('aria-controls'));
+
+    await trigger.click();
+    await assertOpen('.test-menu1', true);
+
+    assert.equal(await trigger.getAttribute('aria-expanded'), 'true');
+    const listId = await trigger.getAttribute('aria-controls');
+    assert.match(listId!, /^weasel-element-\d+$/);
+    assert.equal(await trigger.getAttribute('aria-owns'), listId);
+
+    const list = await driver.find(`#${listId}`);
+    assert.equal(await list.getAttribute('role'), 'menu');
+
+    const triggerId = await trigger.getAttribute('id');
+    assert.equal(await list.getAttribute('aria-labelledby'), triggerId);
+
+    const menuItem = await driver.find('.test-cut');
+    assert.equal(await menuItem.getAttribute('role'), 'menuitem');
+    assert.equal(await menuItem.getAttribute('tabindex'), '-1');
+
+    await driver.sendKeys(Key.ESCAPE);
+    await assertOpen('.test-menu1', false);
+    assert.equal(await trigger.getAttribute('aria-expanded'), 'false');
+    assert.notOk(await trigger.getAttribute('aria-controls'));
+    assert.notOk(await trigger.getAttribute('aria-owns'));
+  });
+
   it('should toggle on trigger click', async function() {
     // Open menu, check we see something.
     await driver.find('.test-btn1').click();
@@ -25,6 +55,27 @@ describe('menu', () => {
     await driver.find('.test-btn1').click();
     await assertOpen('.test-menu1', false);
     await assert.isRejected(driver.find('.test-copy'), /Unable to locate/);
+  });
+
+  it('should toggle on trigger Enter keypress', async function() {
+    // start tabbing from the beginning
+    await driver.find('.test-reset-top').click();
+
+    // press Enter on a custom trigger element (div with tabindex, button role, etc.)
+    await driver.sendKeys(Key.TAB);
+    assert.equal(await driver.find('.test-btn1').hasFocus(), true);
+    await driver.sendKeys(Key.ENTER);
+    await assertOpen('.test-menu1', true);
+    await driver.sendKeys(Key.ESCAPE);
+    await assertOpen('.test-menu1', false);
+
+    // then press Enter on a <button> trigger element
+    await driver.sendKeys(Key.TAB);
+    assert.equal(await driver.find('button.test-btn-native').hasFocus(), true);
+    await driver.sendKeys(Key.ENTER);
+    await assertOpen('.test-funky-menu', true);
+    await driver.sendKeys(Key.ESCAPE);
+    await assertOpen('.test-funky-menu', false);
   });
 
   it('should open on contextmenu', async function() {
@@ -198,11 +249,16 @@ describe('menu', () => {
     await driver.sendKeys(Key.UP);
     assert.equal(await driver.find('.test-sub-item2').hasFocus(), true);
     await driver.sendKeys(Key.UP);
-    assert.equal(await driver.find('.test-paste2').hasFocus(), true);
+    assert.equal(await driver.find('.test-sub-item-checkbox').hasFocus(), true);
 
-    // ESCAPE should close both menus.
+    // ESCAPE should close only the submenu; parent stays open.
     await driver.sendKeys(Key.ESCAPE);
     await assertOpen('.test-submenu1', false);
+    await assertOpen('.test-menu1', true);
+    assert.equal(await driver.find('.test-sub-item').hasFocus(), true);
+
+    // ESCAPE again should close the parent menu.
+    await driver.sendKeys(Key.ESCAPE);
     await assertOpen('.test-menu1', false);
     // No actions were performed.
     assert.equal(await driver.find('.test-last').getText(), '');
@@ -221,6 +277,31 @@ describe('menu', () => {
     await assertOpen('.test-menu1', true);
     await driver.sendKeys(Key.ESCAPE);
     await assertOpen('.test-menu1', false);
+  });
+
+  it('should close submenu inside a group when another item is selected', async function() {
+    await driver.find('.test-btn-grouped-items').mouseMove().click();
+    await assertOpen('.test-grouped-items-menu', true);
+
+    // Mouse over a submenu item nested inside a menuGroup.
+    await driver.find('.test-grouped-sub-item').mouseMove();
+    await driver.findWait('.test-submenu1', 1000);
+    await assertOpen('.test-submenu1', true);
+
+    // Mouse over a sibling item in the same group — submenu should close.
+    await driver.find('.test-grouped-item1').mouseMove();
+    await assertOpen('.test-submenu1', false);
+    await assertOpen('.test-grouped-items-menu', true);
+
+    // Re-open, then hover an ungrouped sibling — submenu should close.
+    await driver.find('.test-grouped-sub-item').mouseMove();
+    await driver.findWait('.test-submenu1', 1000);
+    await assertOpen('.test-submenu1', true);
+    await driver.find('.test-ungrouped-item').mouseMove();
+    await assertOpen('.test-submenu1', false);
+
+    await driver.sendKeys(Key.ESCAPE);
+    await assertOpen('.test-grouped-items-menu', false);
   });
 
   it('should support setOpenClass() while a menu is open', async function() {
@@ -291,6 +372,22 @@ describe('menu', () => {
     assert.equal(await driver.find('.test-input1').getAttribute('value'), 'helloa');
   });
 
+  function findSelected() {
+    return driver.findAll('li[class*=-sel]', (e) => e.getText());
+  }
+
+  it('should not hang when navigating a menu of only disabled items', async function() {
+    await driver.find('.test-btn-only-disabled-items').click();
+    await assertOpen('.test-only-disabled-items-menu', true);
+    // Nothing should be selected; arrow keys must not loop forever.
+    await driver.sendKeys(Key.DOWN);
+    assert.deepEqual(await findSelected(), []);
+    await driver.sendKeys(Key.UP);
+    assert.deepEqual(await findSelected(), []);
+    await driver.sendKeys(Key.ESCAPE);
+    await assertOpen('.test-only-disabled-items-menu', false);
+  });
+
   it('should allow nothing selected with navigating navigation', async function() {
     await driver.find('.test-btn5').click();
     await assertOpen('.test-menu1', true);
@@ -316,11 +413,6 @@ describe('menu', () => {
     await assertOpen('.test-menu1', true);
     await driver.sendKeys(Key.ESCAPE);
     await assertOpen('.test-menu1', false);
-
-    function findSelected() {
-      return driver.findAll('li[class*=-sel]', (e) => e.getText());
-    }
-
   });
 
   it('should support the modifyContent argument to customize the dropdown element', async function() {
